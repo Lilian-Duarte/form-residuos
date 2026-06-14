@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0a1628"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>ARISB-MG · Fiscalização Resíduos Sólidos</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<meta name="theme-color" content="#004372"/>
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+/* ================================================================
+   DESIGN: FIELD TERMINAL — industrial ruggedizado, alto contraste
+   Inspiração: terminais de campo militares, scanners industriais
+   ================================================================ */
+:root {
+  --ink:       #0a1628;
+  --ink-mid:   #1a2d4a;
+  --ink-soft:  #2a4060;
+  --steel:     #8ba0bc;
+  --mist:      #c8d8ec;
+  --fog:       #e8f0f8;
+  --paper:     #f4f7fb;
+  --white:     #ffffff;
+
+  --signal:    #00c896;   /* verde operacional */
+  --signal-bg: #e6faf5;
+  --alert:     #e8341c;   /* vermelho alerta */
+  --alert-bg:  #fdecea;
+  --warn:      #f5a623;   /* âmbar atenção */
+  --warn-bg:   #fff8ec;
+  --purple:    #7b5ea7;
+  --purple-bg: #f0ebf8;
+
+  --font-ui:   'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --r:         5px;
+  --r-lg:      10px;
+  --touch:     52px;
+  --sh:        0 2px 8px rgba(10,22,40,.10);
+  --sh-md:     0 4px 20px rgba(10,22,40,.14);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: var(--font-ui);
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ---- TOPBAR ---- */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--ink);
+  padding: 0 16px;
+  height: 56px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.topbar-logo {
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--signal);
+}
+.topbar-sep { width: 1px; height: 22px; background: rgba(255,255,255,.12); }
+.topbar-title {
+  flex: 1;
+  font-size: 13px; font-weight: 500;
+  color: rgba(255,255,255,.75);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-pill {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .08em;
+  padding: 3px 9px; border-radius: 20px;
+  flex-shrink: 0;
+}
+.pill-offline { background: rgba(245,166,35,.15); color: var(--warn); border: 1px solid rgba(245,166,35,.3); }
+.pill-online  { background: rgba(0,200,150,.15);  color: var(--signal); border: 1px solid rgba(0,200,150,.3); }
+
+/* ---- TELAS ---- */
+.screen { display: none; flex-direction: column; min-height: calc(100vh - 56px); }
+.screen.active { display: flex; }
+.scroll { flex: 1; overflow-y: auto; padding: 16px; }
+
+/* ---- HEADER DE SEÇÃO ---- */
+.sec-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.sec-tag {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--steel);
+}
+.sec-line { flex: 1; height: 1px; background: var(--steel); }
+
+/* ---- SELETOR DE MUNICÍPIO ---- */
+.mun-bar {
+  background: var(--white);
+  border: 1px solid var(--mist);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--sh);
+}
+.mun-label {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--steel);
+  margin-bottom: 8px;
+}
+.mun-select {
+  width: 100%;
+  background: var(--paper);
+  border: 1.5px solid var(--mist);
+  border-radius: var(--r);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px; font-weight: 500;
+  padding: 10px 36px 10px 12px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238ba0bc' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color .2s;
+  height: var(--touch);
+}
+.mun-select:focus { border-color: var(--ink-soft); }
+.mun-select option { background: white; }
+.mun-info {
+  display: flex; gap: 8px; margin-top: 10px;
+  flex-wrap: wrap;
+}
+.mun-chip {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px;
+  background: var(--fog); color: var(--steel);
+  border: 1px solid var(--mist);
+}
+.mun-chip.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+/* ---- FILTROS DE TIPO ---- */
+.type-filters {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding-bottom: 4px; margin-bottom: 12px;
+  scrollbar-width: none;
+}
+.type-filters::-webkit-scrollbar { display: none; }
+.tf {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .06em;
+  padding: 5px 12px; border-radius: 20px;
+  border: 1.5px solid var(--mist);
+  background: var(--white); color: var(--steel);
+  cursor: pointer; transition: all .15s;
+  white-space: nowrap;
+  height: 25px;
+}
+.tf.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+/* ---- CARDS DE INSTALAÇÃO ---- */
+.inst-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--white);
+  border: 1.5px solid var(--mist);
+  border-radius: var(--r-lg);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  min-height: var(--touch);
+  box-shadow: var(--sh);
+}
+.inst-card:active, .inst-card.done-card { border-color: var(--signal); }
+.inst-card:active { background: var(--signal-bg); }
+.inst-icon {
+  width: 40px; height: 40px; border-radius: var(--r);
+  background: var(--fog); border: 1px solid var(--mist);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.inst-body { flex: 1; min-width: 0; }
+.inst-name {
+  font-size: 14px; font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.inst-meta {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--steel); margin-top: 2px;
+}
+.inst-prog {
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 700;
+  color: var(--steel); flex-shrink: 0;
+}
+.inst-prog.done { color: var(--signal); }
+.nc-pill {
+  font-family: var(--font-mono);
+  font-size: 9px; font-weight: 700;
+  background: var(--alert-bg); color: var(--alert);
+  border: 1px solid rgba(232,52,28,.25);
+  border-radius: 3px; padding: 1px 5px;
+  margin-left: 5px; vertical-align: middle;
+}
+
+/* ---- BARRA DE PROGRESSO ---- */
+.prog-bar-wrap {
+  background: var(--white);
+  border-bottom: 1px solid var(--mist);
+  padding: 8px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.prog-track {
+  flex: 1; height: 5px;
+  background: var(--fog); border-radius: 3px; overflow: hidden;
+}
+.prog-fill {
+  height: 100%; border-radius: 3px;
+  background: var(--signal);
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+.prog-label {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  color: var(--steel); min-width: 48px; text-align: right;
+}
+
+/* ---- FILTROS DO FORMULÁRIO ---- */
+.form-filters {
+  background: var(--white);
+  border-bottom: 1px solid var(--mist);
+  padding: 8px 16px;
+  display: flex; gap: 6px; overflow-x: auto;
+  scrollbar-width: none;
+}
+.form-filters::-webkit-scrollbar { display: none; }
+
+/* ---- CHECKLIST ITEM ---- */
+.ci-card {
+  background: var(--white);
+  border: 1.5px solid var(--mist);
+  border-radius: var(--r-lg);
+  margin-bottom: 8px;
+  overflow: hidden;
+  box-shadow: var(--sh);
+  transition: border-color .2s;
+}
+.ci-card.answered-sim  { border-color: var(--signal); }
+.ci-card.answered-nao  { border-color: var(--alert); }
+.ci-card.answered-na   { border-color: var(--purple); }
+.ci-card.answered-nv   { border-color: var(--warn); }
+
+.ci-header {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer; user-select: none;
+  min-height: var(--touch);
+}
+.ci-num {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 700;
+  color: var(--mist); min-width: 28px; padding-top: 2px;
+}
+.ci-body { flex: 1; min-width: 0; }
+.ci-code {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600;
+  color: var(--steel); margin-bottom: 3px;
+}
+.ci-desc {
+  font-size: 13.5px; font-weight: 500;
+  color: var(--ink); line-height: 1.4;
+}
+.ci-ref {
+  font-size: 11px; color: var(--steel);
+  margin-top: 4px; line-height: 1.3;
+}
+.enq-badge {
+  font-family: var(--font-mono);
+  font-size: 9px; font-weight: 700;
+  letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 3px;
+  flex-shrink: 0; align-self: flex-start; margin-top: 2px;
+}
+.enq-G  { background: var(--alert-bg);  color: var(--alert); }
+.enq-GV { background: #ffd7d7; color: #a00; }
+.enq-M  { background: var(--warn-bg);   color: var(--warn); }
+.enq-L  { background: var(--signal-bg); color: var(--signal); }
+.enq-V  { background: var(--purple-bg); color: var(--purple); }
+
+.ci-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0; align-self: center; margin-left: 2px;
+  background: var(--mist); transition: all .2s;
+}
+.ci-dot.d-sim { background: var(--signal); box-shadow: 0 0 6px rgba(0,200,150,.4); }
+.ci-dot.d-nao { background: var(--alert);  box-shadow: 0 0 6px rgba(232,52,28,.4); }
+.ci-dot.d-na  { background: var(--purple); }
+.ci-dot.d-nv  { background: var(--warn); }
+
+/* ---- BOTÕES DE RESPOSTA ---- */
+.resp-wrap {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--fog);
+}
+.resp-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--mist); margin: 10px 0 8px;
+}
+.resp-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.btn-r {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px; min-height: 54px;
+  border-radius: var(--r);
+  border: 1.5px solid var(--mist);
+  background: var(--fog);
+  color: var(--steel);
+  font-family: var(--font-ui);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+  padding: 6px 4px; text-align: center;
+  line-height: 1.2;
+}
+.btn-r .ico { font-size: 18px; line-height: 1; }
+.btn-r:active { transform: scale(.96); }
+.btn-r.sel-sim { background: var(--signal-bg); border-color: var(--signal); color: var(--signal); box-shadow: 0 0 10px rgba(0,200,150,.15); }
+.btn-r.sel-nao { background: var(--alert-bg);  border-color: var(--alert);  color: var(--alert);  box-shadow: 0 0 10px rgba(232,52,28,.15); }
+.btn-r.sel-na  { background: var(--purple-bg); border-color: var(--purple); color: var(--purple); }
+.btn-r.sel-nv  { background: var(--warn-bg);   border-color: var(--warn);   color: var(--warn); }
+
+.obs-toggle {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--steel);
+  cursor: pointer; padding: 6px 0; width: fit-content;
+  margin-top: 8px;
+}
+.obs-area { display: none; margin-top: 6px; }
+.obs-area.open { display: block; }
+.obs-ta {
+  width: 100%;
+  background: var(--paper); border: 1.5px solid var(--mist);
+  border-radius: var(--r);
+  color: var(--ink); font-family: var(--font-ui); font-size: 13px;
+  padding: 10px 12px; resize: none; height: 70px; outline: none;
+  transition: border-color .2s;
+}
+.obs-ta:focus { border-color: var(--ink-soft); }
+.prazo-info {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--steel);
+}
+.prazo-val { color: var(--warn); font-weight: 700; }
+
+/* ---- BOTTOM BAR ---- */
+.bottom-bar {
+  background: var(--white);
+  border-top: 1px solid var(--mist);
+  padding: 10px 16px;
+  display: flex; gap: 8px;
+  box-shadow: 0 -2px 8px rgba(10,22,40,.06);
+}
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  height: 48px; border-radius: var(--r);
+  border: none; cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 14px; font-weight: 600;
+  transition: all .15s; padding: 0 18px;
+}
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn-ink  { background: var(--ink); color: white; flex: 1; }
+.btn-ink:hover { background: var(--ink-mid); }
+.btn-sig  { background: var(--signal); color: var(--ink); flex: 1; }
+.btn-out  { background: var(--fog); color: var(--steel); border: 1.5px solid var(--mist); }
+.btn-sm   { font-size: 12px; height: 40px; padding: 0 14px; }
+
+/* ---- MODAL ---- */
+.modal-ov {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,22,40,.6);
+  z-index: 200; align-items: flex-end;
+}
+.modal-ov.open { display: flex; }
+.modal {
+  width: 100%; max-width: 560px; margin: 0 auto;
+  background: var(--white);
+  border-radius: 14px 14px 0 0;
+  padding: 20px 16px 32px;
+  animation: slideUp .25s ease;
+  max-height: 85vh; overflow-y: auto;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
+.modal-handle { width: 36px; height: 4px; background: var(--mist); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 16px; }
+
+/* ---- RESUMO ---- */
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.res-box { background: var(--fog); border: 1px solid var(--mist); border-radius: var(--r); padding: 12px; text-align: center; }
+.res-val { font-family: var(--font-mono); font-size: 28px; font-weight: 700; line-height: 1; }
+.res-key { font-size: 11px; color: var(--steel); margin-top: 4px; }
+.rv-s { color: var(--signal); }
+.rv-n { color: var(--alert); }
+.rv-a { color: var(--purple); }
+.rv-v { color: var(--warn); }
+.rv-p { color: var(--ink); }
+
+/* ---- EXPORTAR ---- */
+.export-info {
+  background: var(--fog); border: 1px solid var(--mist);
+  border-radius: var(--r); padding: 14px;
+  margin-bottom: 12px;
+  font-size: 13px; color: var(--steel); line-height: 1.5;
+}
+.export-info strong { color: var(--ink); }
+
+/* ---- ESTADO VAZIO ---- */
+.empty {
+  text-align: center; padding: 48px 24px;
+  color: var(--steel);
+}
+.empty .eico { font-size: 48px; margin-bottom: 12px; }
+.empty .etxt { font-size: 14px; line-height: 1.5; }
+
+/* ---- TOAST ---- */
+.toast {
+  position: fixed; bottom: 76px; left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--ink); color: white;
+  padding: 10px 20px; border-radius: var(--r);
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transition: all .3s;
+  z-index: 300; white-space: nowrap;
+  box-shadow: var(--sh-md); pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---- TELA DE IDENTIF. ---- */
+.id-form { background: var(--white); border: 1.5px solid var(--mist); border-radius: var(--r-lg); padding: 18px; margin-bottom: 12px; box-shadow: var(--sh); }
+.id-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.id-row.single { grid-template-columns: 1fr; }
+.id-lbl { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--steel); margin-bottom: 5px; }
+.id-inp {
+  width: 100%;
+  background: var(--paper); border: 1.5px solid var(--mist);
+  border-radius: var(--r); color: var(--ink);
+  font-family: var(--font-ui); font-size: 14px;
+  padding: 10px 12px; outline: none;
+  transition: border-color .2s; height: 46px;
+}
+.id-inp:focus { border-color: var(--ink-soft); }
+
+/* Animação de entrada */
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.fade-in { animation: fadeUp .25s ease both; }
+
+/* ---- FOTOS POR ITEM ---- */
+.foto-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; flex-wrap: wrap;
+}
+.btn-camera {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  background: var(--ink); color: white;
+  border: none; border-radius: var(--r);
+  font-family: var(--font-sans); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-camera:active { transform: scale(.96); opacity: .85; }
+.foto-input { display: none; }
+.fotos-grid {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-top: 8px;
+}
+.foto-thumb {
+  position: relative; width: 72px; height: 72px;
+  border-radius: var(--r); overflow: hidden;
+  border: 2px solid var(--mist); flex-shrink: 0;
+  background: var(--paper);
+}
+.foto-thumb img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.foto-del {
+  position: absolute; top: 2px; right: 2px;
+  width: 18px; height: 18px;
+  background: rgba(232,52,28,.85); color: white;
+  border: none; border-radius: 50%;
+  font-size: 10px; font-weight: 700;
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  line-height: 1;
+}
+.foto-count {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600;
+  color: var(--signal);
+  background: rgba(0,200,150,.12);
+  border: 1px solid rgba(0,200,150,.25);
+  border-radius: 20px; padding: 2px 8px;
+}
+
+
+/* ---- CÂMERA / FOTOS ---- */
+.foto-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--fog);
+  flex-wrap: wrap;
+}
+.btn-cam {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 12px;
+  background: var(--ink); color: white;
+  border: none; border-radius: var(--r);
+  font-family: var(--font-sans); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: opacity .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-cam:active { opacity: .75; }
+.foto-count-lbl {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  color: var(--signal);
+  background: rgba(0,200,150,.12);
+  border: 1px solid rgba(0,200,150,.3);
+  border-radius: 20px; padding: 2px 8px;
+}
+.fotos-grid {
+  display: flex; gap: 7px; flex-wrap: wrap;
+  margin-top: 8px;
+}
+.foto-thumb {
+  position: relative; width: 68px; height: 68px;
+  border-radius: var(--r); overflow: hidden;
+  border: 2px solid var(--mist); flex-shrink: 0;
+}
+.foto-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.foto-del {
+  position: absolute; top: 2px; right: 2px;
+  width: 18px; height: 18px;
+  background: rgba(232,52,28,.9); color: white;
+  border: none; border-radius: 50%;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer; line-height: 18px; text-align: center;
+  padding: 0;
+}
+
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+
+<!-- Câmera global — compartilhado por todos os itens do checklist -->
+<input type="file" id="cam-global" accept="image/*" capture="environment" multiple
+  style="display:none" onchange="processarFotosCam(this)"/>
+
+<div class="topbar">
+  <span class="topbar-logo">ARISB·MG</span>
+  <div class="topbar-sep"></div>
+  <span class="topbar-title" id="topbar-title">Fiscalização — Resíduos Sólidos</span>
+  <span class="topbar-pill pill-offline" id="conn-pill">● OFFLINE</span>
+</div>
+
+<!-- ============================================================
+     TELA 0: IDENTIFICAÇÃO DO FISCAL
+     ============================================================ -->
+<div class="screen active" id="scr-ident">
+  <div class="scroll">
+
+    <!-- MODO ONLINE: busca fiscalizações planejadas da API -->
+    <div id="bloco-api" style="display:none">
+      <div class="sec-header"><span class="sec-tag">Fiscalizações Planejadas</span><div class="sec-line"></div></div>
+      <div style="background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.25);border-radius:var(--r);
+                  padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--signal)">
+        ● Conectado ao servidor — selecione uma fiscalização planejada ou preencha manualmente abaixo.
+      </div>
+      <div id="fisc-planejadas-list" style="margin-bottom:16px">
+        <div style="text-align:center;padding:20px;color:var(--steel);font-size:13px">
+          Buscando fiscalizações...
+        </div>
+      </div>
+    </div>
+
+    <!-- MODO OFFLINE / MANUAL -->
+    <div id="bloco-manual">
+      <div class="sec-header"><span class="sec-tag">Identificação Manual</span><div class="sec-line"></div></div>
+      <div class="id-form">
+        <div class="id-row">
+          <div>
+            <div class="id-lbl">ANALISTA DE FISCALIZAÇÃO E REGULAÇÃO</div>
+            <select class="id-inp" id="id-fiscal" style="appearance:auto;cursor:pointer">
+              <option value="">— Selecione o analista —</option>
+            </select>
+            <!-- fallback: entrada manual se API offline -->
+            <input class="id-inp" id="id-fiscal-manual"
+              placeholder="Ou digite o nome manualmente..."
+              type="text" style="display:none;margin-top:6px"/>
+          </div>
+          <div>
+            <div class="id-lbl">DATA DA VISITA</div>
+            <input class="id-inp" id="id-data" type="date"/>
+          </div>
+        </div>
+        <div class="id-row single">
+          <div>
+            <div class="id-lbl">PROCESSO ADMINISTRATIVO</div>
+            <input class="id-inp" id="id-os" placeholder="Ex: FISCNC-PA-000-2000"/>
+          </div>
+        </div>
+        <div class="id-row single">
+          <div>
+            <div class="id-lbl">OBSERVAÇÕES INICIAIS</div>
+            <input class="id-inp" id="id-obs" placeholder="Contexto, objetivos..."/>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-header" style="margin-top:16px"><span class="sec-tag">Município</span><div class="sec-line"></div></div>
+      <div class="mun-bar">
+        <div class="mun-label">SELECIONE O MUNICÍPIO</div>
+        <select class="mun-select" id="mun-select">
+          <option value="">— Selecione —</option>
+        </select>
+        <div id="status-sync" style="font-size:11px;color:#666;padding:4px 0;margin-top:4px">
+          🔄 Verificando dados...
+        </div>
+        <div class="mun-info" id="mun-info"></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-out" id="btn-toggle-manual" onclick="toggleModoManual()"
+      style="display:none">✏️ Manual</button>
+    <button class="btn btn-ink" onclick="iniciarFiscalizacao()">Iniciar Fiscalização →</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     TELA 1: LISTA DE INSTALAÇÕES
+     ============================================================ -->
+<div class="screen" id="scr-lista">
+  <div class="type-filters" id="type-filters" style="padding: 10px 16px 0;"></div>
+  <div style="padding:8px 16px 0">
+    <input type="search" id="busca-instalacao" placeholder="🔍  Buscar instalação..."
+      oninput="filtrarListaInstalacoes(this.value)"
+      style="width:100%;box-sizing:border-box;padding:9px 14px;border:1px solid rgba(255,255,255,.15);
+             border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:14px;
+             font-family:inherit;outline:none"/>
+  </div>
+  <div class="scroll" id="lista-scroll" style="padding-top:8px">
+    <!-- gerado por JS -->
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-out" onclick="voltarIdent()">← Voltar</button>
+    <button class="btn btn-out" onclick="abrirModalNovaInstalacao()">➕ Nova</button>
+    <button class="btn btn-out btn-sm" onclick="abrirResumoGeral()">📊 Resumo</button>
+    <button class="btn btn-sig" onclick="exportarDados()">⬇ Exportar JSON</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     TELA 2: FORMULÁRIO DE CHECKLIST
+     ============================================================ -->
+<div class="screen" id="scr-form">
+  <div class="prog-bar-wrap">
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <span class="prog-label" id="prog-label">0 / 0</span>
+  </div>
+  <div class="form-filters" id="form-filters">
+    <div class="tf active" data-f="todos" onclick="filtrarItens(this)">TODOS</div>
+    <div class="tf" data-f="pendentes" onclick="filtrarItens(this)">PENDENTES</div>
+    <div class="tf" data-f="nao" onclick="filtrarItens(this)">NÃO CONF.</div>
+    <div class="tf" data-f="sim" onclick="filtrarItens(this)">CONFORME</div>
+    <div id="gps-row" style="width:100%;display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--surface);border-top:1px solid rgba(255,255,255,.07)">
+      <button class="btn btn-out" style="font-size:12px;padding:4px 10px;height: 25px;" onclick="capturarGPS()">📍Localização</button>
+      <span id="gps-info" style="font-size:11px;color:var(--steel);flex:1"></span>
+    </div>
+  </div>
+  <div class="scroll" id="form-scroll">
+    <!-- gerado por JS -->
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-out" onclick="voltarLista()">← Lista</button>
+    <button class="btn btn-ink" id="btn-concluir" onclick="concluirInstalacao()">Concluir ✓</button>
+  </div>
+</div>
+
+<!-- MODAL NOVA INSTALAÇÃO -->
+<div class="modal-ov" id="modal-nova-inst-ov" onclick="fecharModalNovaInstalacao(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nova Instalação</div>
+    <div style="display:flex;flex-direction:column;gap:12px;padding:8px 0">
+      <div>
+        <div class="id-lbl">NOME DA INSTALAÇÃO *</div>
+        <input class="id-inp" id="nova-inst-nome" placeholder="Ex: Reservatório Bairro Norte"/>
+      </div>
+      <div>
+        <div class="id-lbl">TIPO *</div>
+        <select class="id-inp" id="nova-inst-tipo" style="padding:10px">
+          <option value="ATD-RES">ATD-RES — Atendimento ao Usuário (Resíduos)</option>
+          <option value="ATR-PP">ATR-PP — Aterro de Pequeno Porte</option>
+          <option value="ATR-SAN">ATR-SAN — Aterro Sanitário</option>
+          <option value="BIO">BIO — Biometanização</option>
+          <option value="COL-CON">COL-CON — Coleta Convencional</option>
+          <option value="COL-SEL">COL-SEL — Coleta Seletiva</option>
+          <option value="COMP">COMP — Compostagem</option>
+          <option value="TRB">TRB — Estação de Transbordo</option>
+          <option value="TRP">TRP — Transporte de Resíduos</option>
+          <option value="TRG">TRG — Triagem / Unidade de Triagem</option>
+          <option value="SMRS">SMRS — Serviço de Manejo de Resíduos Sólidos (NR-7)</option>
+          <option value="SLU">SLU — Serviço de Limpeza Urbana (NR-7)</option>
+          <option value="NR136">NR136 — Norma de Referência nº 136</option>
+        </select>
+      </div>
+      <div>
+        <div class="id-lbl">LOCALIZAÇÃO GPS</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-out" style="font-size:12px;padding:4px 10px;height: 25px;" onclick="capturarGPSNovaInst()">
+            📍 Capturar
+          </button>
+          <span id="nova-inst-gps" style="font-size:11px;color:var(--steel)">Não capturado</span>
+        </div>
+      </div>
+      <div>
+        <div class="id-lbl">OBSERVAÇÃO</div>
+        <input class="id-inp" id="nova-inst-obs" placeholder="Observações sobre a instalação..."/>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-out" style="flex:1" onclick="fecharModalNovaInstalacao()">Cancelar</button>
+      <button class="btn btn-ink" style="flex:1" onclick="confirmarNovaInstalacao()">Adicionar ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESUMO -->
+<div class="modal-ov" id="modal-ov" onclick="fecharModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">RESUMO</div>
+    <div id="modal-body"></div>
+    <button class="btn btn-ink" style="width:100%;margin-top:10px" onclick="fecharModalBtn()">Fechar</button>
+  </div>
+</div>
+
+
+<!-- Input de câmera global — reutilizado por todos os itens -->
+<input type="file" id="camera-input-global" class="foto-input"
+  accept="image/*" capture="environment" multiple
+  onchange="processarFotos(this)"/>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================================
+// DADOS EMBUTIDOS (reais, do grid_form.js e instalacoes.xlsx)
+// ================================================================
+const CHECKLIST_DATA = {"ATD-RES": {"nome": "Atendimento ao Usuário (Resíduos)", "sigla": "ATD-RES", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "11.1", "descricao": "Estrutura do atendimento apresenta espaço adequado, organizado e acessível?", "referencia": "Art. 21 da Resolução FR ARISB-MG nº136/2020", "nc": "Não dispor de estrutura adequada de atendimento aos usuários (espaço adequado, organizado e acessível)", "enquadramento": "Grave", "prazo": "90 dias"}, {"codigo": 2, "item": "11.2", "descricao": "Empregados estão devidamente identificados?", "referencia": "Contrato de Concessão - 12.1 - XXVIII", "nc": "Não dispor de empregados devidamente identificados nos locais de atendimento ao público.", "enquadramento": "Leve", "prazo": "30 dias"}, {"codigo": 3, "item": "11.3", "descricao": "Existe atendimento preferencial com sinalização de prioridade?", "referencia": "Art. 21 da Resolução FR ARISB-MG nº136/2020", "nc": "Não dispor de atendimento preferencial, com sinalização de atendimento prioritário", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "11.4", "descricao": "As reclamações dos usuários são respondidas em até 10 dias úteis?", "referencia": "Art. 18 da Resolução FR ARISB-MG nº136/2020", "nc": "Não responder a reclamações de usuários em até 10 dias úteis quando não for possível uma resposta imediata", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 5, "item": "11.5", "descricao": "É fornecido número de protocolo, quando no registro de solicitação?", "referencia": "Art. 17 da Resolução FR ARISB-MG nº136/2020", "nc": "Não fornecer número do protocolo, quando no registro da solicitação", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 6, "item": "11.6", "descricao": "É mantido registro atualizado de reclamações e solicitações, com anotação do motivo e das datas de solicitação e atendimento?", "referencia": "Art. 17 da Resolução FR ARISB-MG nº136/2020", "nc": "Deixar de manter atualizado o registro das ocorrências de reclamações e solicitações dos usuários, com anotação do motivo e das datas de solicitação e atendimento", "enquadramento": "Grave", "prazo": "30 dias"}, {"codigo": 7, "item": "11.7", "descricao": "O prestador possui manual ou regulamento de prestação dos serviços homologado pela ARISB-MG?", "referencia": "Art. 9º da Resolução FR ARISB-MG nº136/2020", "nc": "Não ter manual ou regulamento de prestação dos serviços homologado pela ARISB-MG", "enquadramento": "Grave", "prazo": "90 dias"}, {"codigo": 8, "item": "11.8", "descricao": "O local de atendimento ao usuário dispõe do manual ou regulamento?", "referencia": "Art. 23 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar manual ou regulamento de prestação dos serviços nos locais de atendimento ao usuário de fácil visualização e acesso", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 9, "item": "11.9", "descricao": "O local de atendimento ao usuário dispõe de exemplar do Código de Defesa do Consumidor?", "referencia": "Art. 23 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar Código de Defesa do Consumidor dos serviços nos locais de atendimento ao usuário de fácil visualização e acesso", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 10, "item": "11.10", "descricao": "O local de atendimento ao usuário dispõe de cópia da Resolução FR-ARISB-MG nº 136/2020?", "referencia": "Art. 23 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar Resolução Condições Gerais de Prestação dos Serviços Públicos de Manejo de Resíduos Sólidos Domiciliares Urbanos no atendimento ao usuário de fácil visualização e acesso", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 11, "item": "11.11", "descricao": "É dada publicidade às interrupções emergenciais?", "referencia": "Art. 72 da Resolução FR ARISB-MG nº136/2020", "nc": "Não dar publicidade sobre interrupções emergenciais", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 12, "item": "11.12", "descricao": "O prestador disponibiliza atendimento telefônico gratuito aos usuários todos os dias úteis, por período igual ou superior a 6 horas diárias?", "referencia": "Art. 24 da Resolução FR ARISB-MG nº136/2020", "nc": "Não dispor de atendimento telefônico gratuito aos usuários todos os dias úteis, por um período não inferior a 6 (seis) horas diárias", "enquadramento": "Grave", "prazo": "90 dias"}, {"codigo": 13, "item": "11.13", "descricao": "O prestador dispõe de endereço eletrônico (site)?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não dispor de endereço eletrônico (site)", "enquadramento": "Grave", "prazo": "90 dias"}, {"codigo": 14, "item": "11.14", "descricao": "Disponibiliza em seu site os endereços dos locais de atendimento?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu site os endereços dos locais de atendimento presencial", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 15, "item": "11.15", "descricao": "Disponibiliza em seu site a programação de coleta, indicando os setores de atendimento, os dias e horário ou turno?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu site a programação de coleta, indicando os setores de atendimento, os dias e horário ou turno de realização da coleta", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 16, "item": "11.16", "descricao": "Disponibiliza em seu site as tabelas dos valores tarifários, quando aplicável?", "referencia": "Art. 26 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu endereço eletrônico as tabelas dos valores tarifários, quando aplicável", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 17, "item": "11.17", "descricao": "Disponibiliza em seu site meios de obtenção de segunda via de fatura, quando aplicável?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu endereço eletrônico meios de obtenção de segunda via de fatura, quando aplicável", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 18, "item": "11.18", "descricao": "Disponibiliza em seu site formulário para encaminhamento de reclamações?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu endereço eletrônico formulário para encaminhamento de reclamação de serviços", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 19, "item": "11.19", "descricao": "Disponibiliza em seu site cópia da Resolução FR-ARISB-MG nº 136/2020?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu endereço eletrônico a cópia da Resolução Condições Gerais de Prestação dos Serviços Públicos de Manejo de Resíduos Sólidos Domiciliares Urbanos", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 20, "item": "11.20", "descricao": "Disponibiliza em seu site cópia da tabela de penalidades aplicáveis aos usuários, quando existente?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu endereço eletrônico a cópia da tabela de penalidades aplicáveis aos usuários", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 21, "item": "11.21", "descricao": "Disponibiliza em seu site informações acerca dos direitos e deveres dos usuários?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu endereço eletrônico as informações acerca dos direitos e deveres do usuário definidos no Regulamento ou Manual de Prestação de Serviços", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 22, "item": "11.22", "descricao": "Disponibiliza em seu site material informativo e educativo?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu endereço eletrônico material informativo e educativo", "enquadramento": "Leve", "prazo": "30 dias"}, {"codigo": 23, "item": "11.23", "descricao": "Disponibiliza em seu site o endereço eletrônico da ARISB-MG?", "referencia": "Art. 25 da Resolução FR ARISB-MG nº136/2020", "nc": "Não disponibilizar em seu endereço eletrônico link para o site da ARISB-MG", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 24, "item": "11.24", "descricao": "Realiza campanhas educativas que incentivem a não-geração, a redução, a reutilização e a reciclagem de resíduos?", "referencia": "Art. 14 da Resolução FR ARISB-MG nº136/2020", "nc": "Não realizar campanhas educativas que incentivem a não-geração, a redução, a reutilização e a reciclagem", "enquadramento": "Grave", "prazo": "90 dias"}]}, "ATR-PP": {"nome": "Aterro de Pequeno Porte", "sigla": "ATR-PP", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "1.1", "descricao": "A instalação possui identificação da unidade, do prestador e aviso de restrição de acesso?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de identificação da instalação, contendo no mínimo: Identificação da unidade, Identificação do Prestador, Restrição de acesso, quando aplicável", "enquadramento": "Leve", "prazo": "60 dias"}, {"codigo": 2, "item": "1.2", "descricao": "A área está devidamente cercada?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Área não está devidamente cercada de forma a impedir o acesso de pessoas não autorizadas", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 3, "item": "1.3", "descricao": "São disponibilizados Equipamentos de Proteção Individual aos colaboradores?", "referencia": "NR-6", "nc": "Indisponibilidade de Equipamentos de Proteção Individual para os colaboradores", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "1.4", "descricao": "Ausência de vetores de doenças nas instalações?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Presença de vetores de doenças nas instalações", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 5, "item": "1.5", "descricao": "A instalação apresenta segurança operacional e estrutural?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Falha operacional ou estrutural que ofereça risco iminente às pessoas e/ou ao meio ambiente", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 6, "item": "1.6", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de manutenção e conservação?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de manutenção e conservação das instalações, equipamentos e/ou veículos utilizados.", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 7, "item": "1.7", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de limpeza?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de limpeza das instalações, equipamentos e/ou veículos utilizados.", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 8, "item": "10.1", "descricao": "A instalação possui a Licença Ambiental aplicável?", "referencia": "Deliberação COPAM 217/2017", "nc": "Ausência de Licenciamento Ambiental", "enquadramento": "Grave", "prazo": "30 dias"}, {"codigo": 9, "item": "10.2", "descricao": "A instalação conta com Plano de Emergência?", "referencia": "Item 5.4.2 da NBR 13.896/1997", "nc": "Ausência de Plano de Emergência", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 10, "item": "10.3", "descricao": "É realizado o Registro contendo as informações sobre os resíduos recebidos, rejeitados e reaproveitados?", "referencia": "Item 5.1.7.3.1 da NBR 8.419/1992 e Item 5.6.1 da NBR 13.896/1997", "nc": "Ausência do Registro de Operação, contendo informações sobre resíduos recebidos, rejeitados e reaproveitados ou retirado do aterro", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 11, "item": "10.4", "descricao": "Existe sistema de drenagem superficial em condições adequadas de conservação?", "referencia": "Item 5.1.2 da NBR 15.849/2010", "nc": "Ausência de Sistema de Drenagem Superficial ou condições inadequadas de conservação do mesmo", "enquadramento": "Média", "prazo": "90 dias"}, {"codigo": 12, "item": "10.5", "descricao": "As vias de acesso se encontram em condições adequadas que possibilitem o acesso de veículos?", "referencia": "Item 6.3.5.1.4 da NBR 15.849/2010", "nc": "Vias de acesso ao serviço em condições inadequadas de utilização", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 13, "item": "10.6", "descricao": "É realizada a cobertura diária dos resíduos?", "referencia": "Item 6.2 da NBR 15.849/2010", "nc": "Inexecução da cobertura diária dos resíduos com camada de solo ou outro material apropriado", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 14, "item": "10.7", "descricao": "É realizada a cobertura final dos resíduos com camada de solo compactado?", "referencia": "Item 6.2 da NBR 15.849/2010", "nc": "Ausência de cobertura final dos resíduos com camada de solo compactado", "enquadramento": "Grave", "prazo": "Imediato"}]}, "ATR-SAN": {"nome": "Aterro Sanitário", "sigla": "ATR-SAN", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "1.1", "descricao": "A instalação possui identificação da unidade, do prestador e aviso de restrição de acesso?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de identificação da instalação, contendo no mínimo: Identificação da unidade, Identificação do Prestador, Restrição de acesso, quando aplicável", "enquadramento": "Leve", "prazo": "60 dias"}, {"codigo": 2, "item": "1.2", "descricao": "A área está devidamente cercada?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Área não está devidamente cercada de forma a impedir o acesso de pessoas não autorizadas", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 3, "item": "1.3", "descricao": "São disponibilizados Equipamentos de Proteção Individual aos colaboradores?", "referencia": "NR-6", "nc": "Indisponibilidade de Equipamentos de Proteção Individual para os colaboradores", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "1.4", "descricao": "Ausência de vetores de doenças nas instalações?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Presença de vetores de doenças nas instalações", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 5, "item": "1.5", "descricao": "A instalação apresenta segurança operacional e estrutural?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Falha operacional ou estrutural que ofereça risco iminente às pessoas e/ou ao meio ambiente", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 6, "item": "1.6", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de manutenção e conservação?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de manutenção e conservação das instalações, equipamentos e/ou veículos utilizados.", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 7, "item": "1.7", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de limpeza?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de limpeza das instalações, equipamentos e/ou veículos utilizados.", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 8, "item": "9.1", "descricao": "A instalação possui a Licença Ambiental aplicável?", "referencia": "Deliberação COPAM 217/2017", "nc": "Ausência de Licenciamento Ambiental", "enquadramento": "Grave", "prazo": "30 dias"}, {"codigo": 9, "item": "9.2", "descricao": "A instalação conta com Plano de Emergência?", "referencia": "Item 5.4.2 da NBR 13.896/1997", "nc": "Ausência de Plano de Emergência", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 10, "item": "9.3", "descricao": "Existe programa de treinamento e capacitação dos operadores?", "referencia": "Item 4.7 da NBR 13.896/1997", "nc": "Ausência de programa de treinamento e capacitação dos operadores", "enquadramento": "Grave", "prazo": "90 dias"}, {"codigo": 11, "item": "9.4", "descricao": "É realizado o Registro contendo as informações sobre os resíduos recebidos, rejeitados e reaproveitados?", "referencia": "Item 5.1.7.3.1 da NBR 8.419/1992 e Item 5.6.1 da NBR 13.896/1997", "nc": "Ausência do Registro de Operação do Aterro, contendo informações sobre resíduos recebidos, rejeitados e reaproveitados ou retirado do aterro", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 12, "item": "9.5", "descricao": "É realizada a cobertura diária dos resíduos?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Inexecução da cobertura diária dos resíduos com camada de solo ou outro material apropriado", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 13, "item": "9.6", "descricao": "É cumprido programa de monitoramento de águas subterrâneas?", "referencia": "Item 5.1.1.5 da NBR 13.896/1997", "nc": "Ausência ou descumprimento de programa de monitoramento de águas subterrâneas", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 14, "item": "9.7", "descricao": "É cumprido programa de monitoramento de águas superficiais?", "referencia": "Item 5.1.7.5.1 da NBR 8.419/1992", "nc": "Ausência ou descumprimento de programa de monitoramento de águas superficiais", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 15, "item": "9.8", "descricao": "Existe sistema de drenagem superficial em condições adequadas de conservação?", "referencia": "Item 5.2.5 da NBR 13.896/1997", "nc": "Ausência de Sistema de Drenagem Superficial ou condições inadequadas de conservação do mesmo", "enquadramento": "Média", "prazo": "90 dias"}, {"codigo": 16, "item": "9.9", "descricao": "São realizados tratamento e destinação adequados do chorume?", "referencia": "Item 5.2.3 da NBR 13.896/1997", "nc": "Condições inadequadas do tratamento de chorume ou não destinação adequada", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 17, "item": "9.10", "descricao": "São realizados a drenagem e o tratamento dos gases gerados pelos resíduos?", "referencia": "Item 5.3 da NBR 13.896/1997", "nc": "Ausência de drenagem e tratamento de gases gerados pelos resíduos", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 18, "item": "9.11", "descricao": "As vias de acesso se encontram em condições adequadas que possibilitem o acesso de veículos?", "referencia": "Item 4.3 da NBR 13.896/1997", "nc": "Vias de acesso ao serviço em condições inadequadas de conservação, que impossibilitem o acesso de veículos", "enquadramento": "Média", "prazo": "Imediato"}]}, "BIO": {"nome": "Biometanização", "sigla": "BIO", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "1.1", "descricao": "A instalação possui identificação da unidade, do prestador e aviso de restrição de acesso?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de identificação da instalação", "enquadramento": "Leve", "prazo": "60 dias"}, {"codigo": 2, "item": "1.2", "descricao": "A área está devidamente cercada?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Área não está devidamente cercada", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 3, "item": "1.3", "descricao": "São disponibilizados Equipamentos de Proteção Individual aos colaboradores?", "referencia": "NR-6, 12.1 - XXVIII", "nc": "Indisponibilidade de EPIs para os colaboradores", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "1.4", "descricao": "Ausência de vetores de doenças nas instalações?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Presença de vetores de doenças nas instalações", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 5, "item": "1.5", "descricao": "A instalação apresenta segurança operacional e estrutural?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Falha operacional ou estrutural que ofereça risco iminente", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 6, "item": "1.6", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de manutenção e conservação?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de manutenção e conservação", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 7, "item": "1.7", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de limpeza?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de limpeza", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 8, "item": "8.1", "descricao": "A instalação possui a Licença Ambiental aplicável?", "referencia": "Deliberação COPAM 217/2017", "nc": "Ausência de Licença Ambiental vigente", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 9, "item": "8.2", "descricao": "É realizada a disposição final adequada do lodo?", "referencia": "Art. 12 da Resolução FR ARISB-MG nº136/2020", "nc": "Não realizar disposição final adequada do lodo resultante do processo de biometanização", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 10, "item": "8.3", "descricao": "São realizados tratamento e destinação adequados dos efluentes?", "referencia": "Art. 12 da Resolução FR ARISB-MG nº136/2020", "nc": "Tratamento ou destinação inadequados dos efluentes", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 11, "item": "8.4", "descricao": "É realizado o monitoramento da pressão e da estanqueidade das tubulações de captação do biogás?", "referencia": "Art. 12 da Resolução FR ARISB-MG nº136/2020", "nc": "Ausência de monitoramento da pressão e da estanqueidade das tubulações de captação do biogás", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 12, "item": "8.5", "descricao": "Existe sistema de combate a incêndios?", "referencia": "NR-23", "nc": "Ausência de sistema de combate a incêndios", "enquadramento": "Grave", "prazo": "Imediato"}]}, "COL-CON": {"nome": "Coleta Convencional", "sigla": "COL-CON", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "2.1", "descricao": "Existe Plano Operacional e de Trabalho?", "referencia": "Art. 28 da Resolução FR ARISB-MG nº136/2020", "nc": "Ausência do Plano Operacional e de Trabalho", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 2, "item": "2.2", "descricao": "As rotas de coleta são cumpridas de maneira regular?", "referencia": "Art. 36 da Resolução FR ARISB-MG nº136/2020", "nc": "Não cumprimento das rotas de coleta de maneira regular", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 3, "item": "2.3", "descricao": "A coleta é realizada respeitando a frequência mínima?", "referencia": "Art. 36 da Resolução FR ARISB-MG nº136/2020", "nc": "Coleta realizada com frequência abaixo da mínima estabelecida", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "2.4", "descricao": "Os veículos coletores possuem equipamento de segurança?", "referencia": "Item 3.61 da NBR 12.980/1993 e item 8 da NBR 14.599/2014", "nc": "Ausência de equipamento de segurança para veículo coletor.", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 5, "item": "2.5", "descricao": "A coleta é realizada de maneira adequada?", "referencia": "Resolução FR ARISB-MG nº136/2020", "nc": "Adoção dos procedimentos inadequados durante a coleta", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 6, "item": "2.7", "descricao": "O esgotamento de chorume é realizado de maneira adequada?", "referencia": "Resolução FR ARISB-MG nº136/2020", "nc": "Condições inadequadas de esgotamento da calha de chorume", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 7, "item": "2.8", "descricao": "Ausência de derramamento de chorume?", "referencia": "Art. 7º da Lei Federal 12.305/2010 e Art. 41 da Resolução FR ARISB-MG nº136/2020", "nc": "Ocorrência de derramamento de chorume", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 8, "item": "2.9", "descricao": "Existência de material/produto para limpeza do pavimento, em caso de derramamento de chorume?", "referencia": "Art. 41 da Resolução FR ARISB-MG nº136/2020", "nc": "Ausência de material para limpeza do pavimento em caso de derramamento de chorume", "enquadramento": "Grave", "prazo": "Imediato"}]}, "COL-SEL": {"nome": "Coleta Seletiva", "sigla": "COL-SEL", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "3.1", "descricao": "Meio de transporte em condições adequadas?", "referencia": "Art. 12 da Resolução FR ARISB-MG nº136/2020", "nc": "Meio de transporte em condições inadequadas de segurança", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 2, "item": "3.2", "descricao": "As rotas são cumpridas regularmente?", "referencia": "Art. 36 da Resolução FR ARISB-MG nº136/2020", "nc": "Não cumprimento das rotas de coleta de maneira regular", "enquadramento": "Média", "prazo": "Imediato"}, {"codigo": 3, "item": "3.3", "descricao": "A frequência mínima de coleta é respeitada?", "referencia": "Art. 12 da Resolução FR ARISB-MG nº136/2020", "nc": "Coleta realizada com frequência abaixo da mínima estabelecida", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "3.4", "descricao": "Instalações e equipamentos dos PEVs estão em condições adequadas de conservação?", "referencia": "Art. 12 da Resolução FR ARISB-MG nº136/2020", "nc": "Instalações e equipamentos dos Pontos de Entrega Voluntária em condições inadequadas de conservação", "enquadramento": "Média", "prazo": "30 dias"}]}, "COMP": {"nome": "Compostagem", "sigla": "COMP", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "1.1", "descricao": "A instalação possui identificação da unidade, do prestador e aviso de restrição de acesso?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de identificação da instalação", "enquadramento": "Leve", "prazo": "60 dias"}, {"codigo": 2, "item": "1.2", "descricao": "A área está devidamente cercada?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Área não está devidamente cercada", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 3, "item": "1.3", "descricao": "São disponibilizados Equipamentos de Proteção Individual aos colaboradores?", "referencia": "NR-6", "nc": "Indisponibilidade de EPIs para os colaboradores", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "1.4", "descricao": "Ausência de vetores de doenças nas instalações?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Presença de vetores de doenças nas instalações", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 5, "item": "1.5", "descricao": "A instalação apresenta segurança operacional e estrutural?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Falha operacional ou estrutural que ofereça risco iminente", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 6, "item": "1.6", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de manutenção e conservação?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de manutenção e conservação", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 7, "item": "1.7", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de limpeza?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de limpeza", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 8, "item": "7.1", "descricao": "O galpão de compostagem possui a Licença Ambiental aplicável?", "referencia": "Deliberação COPAM 217/2017", "nc": "Ausência de Licença Ambiental vigente", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 9, "item": "7.2", "descricao": "Ausência de falhas na impermeabilização do pátio de cura?", "referencia": "Art. 12 da Resolução FR ARISB-MG nº136/2020", "nc": "Falhas na impermeabilização do pátio de cura", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 10, "item": "7.3", "descricao": "Existência de drenagem e destinação adequada de líquidos no pátio de compostagem?", "referencia": "NBR 11.174/1990", "nc": "Ausência de drenagem e destinação adequada de líquidos no pátio de compostagem", "enquadramento": "Grave", "prazo": "30 dias"}]}, "TRB": {"nome": "Estação de Transbordo", "sigla": "TRB", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "1.1", "descricao": "A instalação possui identificação da unidade, do prestador e aviso de restrição de acesso?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de identificação da instalação", "enquadramento": "Leve", "prazo": "60 dias"}, {"codigo": 2, "item": "1.2", "descricao": "A área está devidamente cercada?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Área não está devidamente cercada", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 3, "item": "1.3", "descricao": "São disponibilizados Equipamentos de Proteção Individual aos colaboradores?", "referencia": "NR-6", "nc": "Indisponibilidade de EPIs para os colaboradores", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "1.4", "descricao": "Ausência de vetores de doenças nas instalações?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Presença de vetores de doenças nas instalações", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 5, "item": "1.5", "descricao": "A instalação apresenta segurança operacional e estrutural?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Falha operacional ou estrutural que ofereça risco iminente", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 6, "item": "1.6", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de manutenção e conservação?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de manutenção e conservação", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 7, "item": "1.7", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de limpeza?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de limpeza", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 8, "item": "4.1", "descricao": "A instalação possui a Licença Ambiental aplicável?", "referencia": "Deliberação COPAM 217/2017", "nc": "Ausência de Licença Ambiental vigente", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 9, "item": "4.2", "descricao": "É realizado o registro de movimentação (controle da entrada e da saída de resíduos)?", "referencia": "Item 6.1 da NBR 11.174/1990", "nc": "Ausência de registro de movimentação da estação de transbordo", "enquadramento": "Leve", "prazo": "30 dias"}, {"codigo": 10, "item": "4.3", "descricao": "Há disposição de resíduos diretamente no solo?", "referencia": "Art. 7º da Lei Federal 12.305/2010", "nc": "Ocorrência de disposição de resíduo sólido diretamente no solo", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 11, "item": "4.4", "descricao": "A instalação dispõe de infraestrutura de drenagem e destina adequadamente o chorume?", "referencia": "NBR 11.174/1990", "nc": "Ausência de drenagem e destinação adequada do chorume", "enquadramento": "Grave", "prazo": "30 dias"}]}, "TRP": {"nome": "Transporte de Resíduos", "sigla": "TRP", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "5.1", "descricao": "São utilizados veículos e métodos adequados ao tipo de resíduo transportado?", "referencia": "Art. 12 da Resolução FR ARISB-MG nº136/2020", "nc": "Utilização de veículos e/ou métodos inadequados de acordo com o tipo de resíduo transportado", "enquadramento": "Média", "prazo": "90 dias"}, {"codigo": 2, "item": "5.2", "descricao": "Os resíduos estão abrigados de intempéries?", "referencia": "NBR 13.221/2017", "nc": "Sujeição dos resíduos transportados a intempéries e espalhamento pelas vias", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 3, "item": "5.3", "descricao": "Ausência de derramamento de chorume?", "referencia": "Art. 7º da Lei Federal 12.305/2010", "nc": "Ocorrência de derramamento de chorume", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "5.4", "descricao": "Veículos estão em condições adequadas de manutenção, limpeza e conservação?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de manutenção, limpeza e conservação dos veículos", "enquadramento": "Média", "prazo": "30 dias"}]}, "TRG": {"nome": "Triagem / Unidade de Triagem", "sigla": "TRG", "tipo_checklist": "nc", "itens": [{"codigo": 1, "item": "1.1", "descricao": "A instalação possui identificação da unidade, do prestador e aviso de restrição de acesso?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de identificação da instalação", "enquadramento": "Leve", "prazo": "60 dias"}, {"codigo": 2, "item": "1.2", "descricao": "A área está devidamente cercada?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Área não está devidamente cercada", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 3, "item": "1.3", "descricao": "São disponibilizados Equipamentos de Proteção Individual aos colaboradores?", "referencia": "NR-6", "nc": "Indisponibilidade de EPIs para os colaboradores", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 4, "item": "1.4", "descricao": "Ausência de vetores de doenças nas instalações?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Presença de vetores de doenças nas instalações", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 5, "item": "1.5", "descricao": "A instalação apresenta segurança operacional e estrutural?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Falha operacional ou estrutural que ofereça risco iminente", "enquadramento": "Gravíssima", "prazo": "Imediato"}, {"codigo": 6, "item": "1.6", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de manutenção e conservação?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de manutenção e conservação", "enquadramento": "Grave", "prazo": "Imediato"}, {"codigo": 7, "item": "1.7", "descricao": "A instalação, os equipamentos e os veículos se encontram em bom estado de limpeza?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Ausência de limpeza", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 8, "item": "6.1", "descricao": "A instalação possui a Licença Ambiental aplicável?", "referencia": "Deliberação COPAM 217/2017", "nc": "Ausência de Licença Ambiental vigente", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 9, "item": "6.2", "descricao": "É realizado o registro de movimentação dos resíduos?", "referencia": "Item 6.1 da NBR 11.174/1990", "nc": "Ausência de registro de movimentação (entrada e saída) e armazenamento de resíduos", "enquadramento": "Média", "prazo": "30 dias"}, {"codigo": 10, "item": "6.3", "descricao": "A instalação apresenta ventilação adequada?", "referencia": "Art. 2º da Lei Federal 11.445/2007", "nc": "Condições inadequadas de ventilação", "enquadramento": "Média", "prazo": "60 dias"}, {"codigo": 11, "item": "6.4", "descricao": "Os resíduos estão identificados e classificados no local de armazenamento?", "referencia": "Item 4.1.2 da NBR 11.174/1990", "nc": "Ausência de identificação e classificação do resíduo no local de armazenamento", "enquadramento": "Leve", "prazo": "Imediato"}, {"codigo": 12, "item": "6.5", "descricao": "O local de armazenamento dos resíduos possui base impermeabilizada?", "referencia": "Item 5.4.4.2 da NBR 11.174/1990 e Caderno de Encargos - 6.1", "nc": "Ausência de impermeabilização na base do local de armazenamento de resíduos", "enquadramento": "Média", "prazo": "60 dias"}, {"codigo": 13, "item": "6.6", "descricao": "Os resíduos estão adequadamente abrigados de intempéries?", "referencia": "NBR 11.174/1990", "nc": "Exposição dos resíduos a intempéries", "enquadramento": "Média", "prazo": "90 dias"}, {"codigo": 14, "item": "6.7", "descricao": "Existência de equipamentos de prevenção de incêndios dentro do prazo de validade?", "referencia": "Item 5.4.7 da NBR 11.174/1990", "nc": "Ausência de equipamentos de prevenção de incêndios dentro do prazo de validade", "enquadramento": "Grave", "prazo": "Imediato"}]}, "SMRS": {"nome": "SMRS - Serviço de Manejo de Resíduos Sólidos", "sigla": "SMRS", "tipo_checklist": "nr7", "itens": [{"codigo": 1, "item": "1", "descricao": "Encaminhamento dos resíduos sólidos urbanos para destinação final, incluindo aqueles decorrentes das atividades de triagem e tratamento, para reutilização, reciclagem, recuperação energética e disposição final em aterros sanitários ou outras destinações admitidas pelos órgãos competentes"}, {"codigo": 2, "item": "2.1", "descricao": "Estabelecimento das regras de segregação, acondicionamento e disponibilização dos resíduos"}, {"codigo": 3, "item": "2.2", "descricao": "Divulgação das regras de acondicionamento e disponibilização dos resíduos"}, {"codigo": 4, "item": "2.3", "descricao": "Realização da coleta em áreas urbanas e rurais"}, {"codigo": 5, "item": "2.4", "descricao": "Segregação dos resíduos conforme estabelecido na legislação do titular, nos planos de saneamento básico e de resíduos sólidos e nas normas da ERI"}, {"codigo": 6, "item": "3", "descricao": "Identificação e registro de todas as cargas de resíduos recebidas nas unidades de transbordo com informações sobre sua origem, composição, dia e hora de entrada e respectivo peso registrado em balança"}, {"codigo": 7, "item": "4", "descricao": "Realização da atividade de triagem nas modalidades manual ou mecanizada, compatível com os tipos de resíduos sólidos que serão processados e para o fim projetado."}, {"codigo": 8, "item": "5.1", "descricao": "Transporte dos resíduos sólidos urbanos por meio de equipamentos e veículos devidamente identificados e licenciados"}, {"codigo": 9, "item": "5.2", "descricao": "Adoção das precauções necessárias, durante a atividade de transporte, para evitar a entrada de águas pluviais e o derramamento de resíduos sólidos e líquidos"}, {"codigo": 10, "item": "6", "descricao": "Realização da atividade de tratamento por processos e operações que alteram as características físicas, físico-químicas, químicas ou biológicas dos resíduos visando à minimização do risco à saúde pública e à preservação da qualidade do meio ambiente, podendo o tratamento ser físico, químico, biológico ou térmico."}]}, "SLU": {"nome": "SLU - Serviço de Limpeza Urbana", "sigla": "SLU", "tipo_checklist": "nr7", "itens": [{"codigo": 1, "item": "1", "descricao": "Acondicionamento e disponibilização dos resíduos para coleta de forma a impedir vazamentos e espalhamento, em pontos que não comprometam o trânsito de pessoas e veículos e a estética urbana."}, {"codigo": 2, "item": "2", "descricao": "Não há diretrizes objetivas. (Capina e raspagem)"}, {"codigo": 3, "item": "3", "descricao": "Cobrança pelo serviço de roçada de áreas particulares, pelo prestador de serviços"}, {"codigo": 4, "item": "4", "descricao": "Acondicionamento dos resíduos de poda de forma segregada dos demais para disponibilização ao SMRSU"}, {"codigo": 5, "item": "5", "descricao": "Priorização da utilização de água de reuso para limpeza e asseio de logradouros públicos."}, {"codigo": 6, "item": "6", "descricao": "Não há diretrizes objetivas. (Desobstrução e limpeza de bueiros, bocas de lobo e correlatos)"}, {"codigo": 7, "item": "7.1", "descricao": "Coleta dos resíduos dispostos em locais irregulares, mapeamento das localizações e comunicação ao titular e à ERI"}, {"codigo": 8, "item": "7.2", "descricao": "Destinação adequada dos resíduos dispostos em locais irregulares"}]}, "NR136": {"nome": "Norma de Referência nº 136", "sigla": "NR136", "tipo_checklist": "nr136", "itens": [{"codigo": 1, "item": "1.1", "descricao": "Elaboração do Plano Municipal de Saneamento Básico e do Plano de Gestão Integrada de Resíduos Sólidos, ou adesão a estrutura de prestação regionalizada que disponha desses instrumentos"}, {"codigo": 2, "item": "1.2", "descricao": "Disponibilização anual das informações ao SINIR e ao SINISA ou outro sistema de informações que vier a substituir"}, {"codigo": 3, "item": "1.3", "descricao": "Realização de ações de educação ambiental"}, {"codigo": 4, "item": "1.4", "descricao": "Atendimento às condições e metas estabelecidas nos termos dos contratos e dos planos de saneamento"}, {"codigo": 5, "item": "1.5", "descricao": "Disponibilização de estrutura de atendimento presencial, atendimento telefônico e eletrônico (site, aplicativo etc.) adequadas, nos termos dos normativos regulatórios"}, {"codigo": 6, "item": "1.6", "descricao": "Manutenção de registro atualizado de reclamações, solicitações, denúncias e sugestões, contendo as informações mínimas definidas nos normativos regulatórios"}, {"codigo": 7, "item": "2.1", "descricao": "Cumprimento das atividades de Planejamento e Administração"}, {"codigo": 8, "item": "2.2", "descricao": "Disposição final dos rejeitos em aterro sanitário licenciado e operado conforme disposições dos normativos regulatórios e condicionantes do órgão licenciador"}, {"codigo": 9, "item": "2.3", "descricao": "Realização do monitoramento ambiental e geotécnico do aterro sanitário"}, {"codigo": 10, "item": "2.4", "descricao": "Realização periódica de análises da composição gravimétrica dos resíduos sólidos domiciliares"}, {"codigo": 11, "item": "3.1", "descricao": "Cumprimento das atividades de Planejamento e Administração"}, {"codigo": 12, "item": "3.2", "descricao": "Coleta de resíduos sólidos especiais condicionada à cobrança de preços públicos"}, {"codigo": 13, "item": "3.3", "descricao": "Divulgação das regras de acondicionamento e separação dos resíduos bem como dos horários e frequência de coleta"}, {"codigo": 14, "item": "3.4", "descricao": "Atendimento ao intervalo máximo entre duas coletas estabelecido nos contratos ou nos normativos regulatórios"}, {"codigo": 15, "item": "3.5", "descricao": "Adoção da coleta seletiva, por meio dos planos de saneamento básico e ou de Gerenciamento de Resíduos"}, {"codigo": 16, "item": "3.6", "descricao": "Execução da coleta seletiva, nos termos dos instrumentos de planejamento do titular e dos normativos regulatórios"}, {"codigo": 17, "item": "3.7", "descricao": "Elaboração do Plano Operacional e de Trabalho"}, {"codigo": 18, "item": "4.1", "descricao": "Cumprimento das atividades de Planejamento e Administração"}, {"codigo": 19, "item": "4.2", "descricao": "Licenciamento ambiental vigente"}, {"codigo": 20, "item": "4.3", "descricao": "Armazenamento segregado dos diferentes tipos de resíduos recebidos"}, {"codigo": 21, "item": "4.4", "descricao": "O armazenamento de resíduos deverá ocorrer em estrutura adequada para essa finalidade"}, {"codigo": 22, "item": "5.1", "descricao": "Cumprimento das atividades de Planejamento e Administração"}, {"codigo": 23, "item": "5.2", "descricao": "Inclusão dos catadores e apoio à formação, capacitação e desenvolvimento das cooperativas"}, {"codigo": 24, "item": "5.3", "descricao": "Licenciamento ambiental e atendimento às condicionantes impostas pelo órgão licenciador, se for o caso"}, {"codigo": 25, "item": "6.1", "descricao": "Cumprimento das atividades de Planejamento e Administração"}, {"codigo": 26, "item": "6.2", "descricao": "O transporte dos resíduos sólidos urbanos deverá ser feito por meio de equipamentos e veículos devidamente identificados e licenciados"}, {"codigo": 27, "item": "7.1", "descricao": "Cumprimento das atividades de Planejamento e Administração"}, {"codigo": 28, "item": "7.2", "descricao": "Tratamento dos resíduos em instalações adequadas, em locais e por métodos devidamente licenciados pelos órgãos ambientais"}]}};
+let MUNICIPIOS_DATA = [{"nome": "Bueno Brandão", "prestador": "Secretaria Municipal Bueno Brandão", "instalacoes": [{"id": "BUE896C", "nome": "Norma de Referência 136", "tipo": "NR136", "lat": null, "lon": null}, {"id": "BUE75AF", "nome": "Serviço de Manejo de Resíduos Sólidos", "tipo": "SMRS", "lat": null, "lon": null}, {"id": "BUE7E30", "nome": "Serviços De Limpeza Urbana", "tipo": "SLU", "lat": null, "lon": null}, {"id": "BUED41F", "nome": "aterro", "tipo": "ATR-SAN", "lat": null, "lon": null}]}, {"nome": "Juiz de Fora", "prestador": "Cesama", "instalacoes": [{"id": "JUI9ABF", "nome": "NR 7 - SLU - Serviço de Limpeza Urbana", "tipo": "SLU", "lat": null, "lon": null}, {"id": "JUI8259", "nome": "NR 7 - SMRS - Serviço de Manejo de Resíduos Sólidos", "tipo": "SMRS", "lat": null, "lon": null}, {"id": "JUI09F5", "nome": "Norma de Referência 136/2020", "tipo": "NR136", "lat": null, "lon": null}]}];
+
+const ICONE = {
+  'ATD-RES':'🏢','ATR-PP':'⛰️','ATR-SAN':'🏔️','BIO':'⚗️',
+  'COL-CON':'🚛','COL-SEL':'♻️','COMP':'🌿','TRB':'🔄',
+  'TRP':'🚚','TRG':'🔍','SMRS':'📋','SLU':'🧹','NR136':'📜'
+};
+
+// ================================================================
+// ESTADO
+// ================================================================
+const S = {
+  fiscal:   '',
+  gps:      {},   // key: instId → {lat, lon, ts}
+  data:     '',
+  os:       '',
+  obsInic:  '',
+  municipio: null,     // objeto do MUNICIPIOS_DATA
+  instAtual: null,     // instalação aberta
+  respostas: {},       // key: instId::itemCodigo → 'sim'|'nao'|'na'|'nv'
+  obs:       {},       // key: instId::itemCodigo → texto
+  filtroTipo: 'todos',
+  filtroItens: 'todos',
+  filtroBusca: '',
+};
+
+// Recupera sessão salva
+try {
+  const saved = localStorage.getItem('arisb_offline_session');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    Object.assign(S, parsed);
+  }
+} catch(e) {}
+
+function salvar() {
+  try { localStorage.setItem('arisb_offline_session', JSON.stringify(S)); } catch(e) {}
+}
+
+// ================================================================
+// UTILITÁRIOS
+// ================================================================
+function key(instId, cod) { return `${instId}::${cod}`; }
+function toast(msg, dur=2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function dotClass(r) { return r ? `d-${r}` : ''; }
+function enqClass(e) {
+  return { 'Grave':'enq-G','Gravíssima':'enq-GV','Média':'enq-M','Leve':'enq-L','Variável':'enq-V' }[e] || 'enq-L';
+}
+function corConf(pct) {
+  if (pct === null) return 'var(--steel)';
+  return pct >= 80 ? 'var(--signal)' : pct >= 60 ? 'var(--warn)' : 'var(--alert)';
+}
+
+// Retorna os itens do checklist para a instalação,
+// filtrados por ncs_pendentes se for formulário de acompanhamento.
+function getItens(inst) {
+  const base = (CHECKLIST_DATA[inst.tipo] || {}).itens || [];
+  return inst.ncs_pendentes && inst.ncs_pendentes.length > 0
+    ? base.filter(it => inst.ncs_pendentes.includes(it.codigo))
+    : base;
+}
+
+function progInstalacao(inst) {
+  const itens = getItens(inst);
+  const resp  = itens.filter(it => S.respostas[key(inst.id, it.codigo)] !== undefined).length;
+  return { resp, total: itens.length };
+}
+
+function mostrarTela(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Conexão
+function atualizarConn() {
+  const el = document.getElementById('conn-pill');
+  if (navigator.onLine) {
+    el.textContent = '● ONLINE'; el.className = 'topbar-pill pill-online';
+  } else {
+    el.textContent = '● OFFLINE'; el.className = 'topbar-pill pill-offline';
+  }
+}
+window.addEventListener('online', atualizarConn);
+window.addEventListener('offline', atualizarConn);
+
+
+// ================================================================
+// CÂMERA — captura e armazena fotos por item
+// ================================================================
+if (!S.fotos) S.fotos = {};
+
+let _camCodigo = null; // código do item aguardando foto
+
+function abrirCam(codigo) {
+  _camCodigo = codigo;
+  const el = document.getElementById('cam-global');
+  el.value = ''; el.click();
+}
+
+async function processarFotosCam(input) {
+  const inst = S.instAtual;
+  if (!inst || !_camCodigo || !input.files.length) return;
+  const k = key(inst.id, _camCodigo);
+  if (!S.fotos[k]) S.fotos[k] = [];
+
+  for (const file of input.files) {
+    const b64      = await lerArquivoB64(file);
+    const thumb    = await gerarThumbB64(b64, 160);       // exibição rápida
+    const relatorio = await gerarImagemRelatorio(b64);    // qualidade para relatório
+    S.fotos[k].push({ b64: relatorio, thumb, tipo: file.type });
+    // Nota: b64 agora armazena versão de relatório (1200px) — não o original bruto
+  }
+  salvar();
+  atualizarFotosDom(_camCodigo);
+}
+
+function lerArquivoB64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function gerarThumbB64(b64, maxPx) {
+  // Gera thumbnail para exibição (160px)
+  return gerarImagemRedimensionada(b64, maxPx, 0.72);
+}
+
+function gerarImagemRelatorio(b64) {
+  // Gera versão de qualidade para relatório (1200px, 88% qualidade)
+  return gerarImagemRedimensionada(b64, 1200, 0.88);
+}
+
+function gerarImagemRedimensionada(b64, maxPx, qualidade) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const ratio = Math.min(maxPx / img.width, maxPx / img.height, 1);
+      const c = document.createElement('canvas');
+      c.width  = Math.round(img.width  * ratio);
+      c.height = Math.round(img.height * ratio);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      res(c.toDataURL('image/jpeg', qualidade));
+    };
+    img.src = b64;
+  });
+}
+
+function atualizarFotosDom(codigo) {
+  const inst = S.instAtual;
+  if (!inst) return;
+  const k     = key(inst.id, codigo);
+  const fotos = S.fotos[k] || [];
+
+  // Atualiza contador no botão
+  const lbl = document.getElementById('foto-lbl-' + codigo);
+  if (lbl) {
+    if (fotos.length > 0) {
+      lbl.textContent = fotos.length + ' foto' + (fotos.length > 1 ? 's' : '');
+      lbl.style.display = 'inline';
+    } else {
+      lbl.style.display = 'none';
+    }
+  }
+
+  // Atualiza grade de thumbnails
+  const grid = document.getElementById('foto-grid-' + codigo);
+  if (!grid) return;
+  if (fotos.length === 0) { grid.innerHTML = ''; return; }
+  grid.innerHTML = '<div class="fotos-grid">' +
+    fotos.map((f, i) => `
+      <div class="foto-thumb">
+        <img src="${f.thumb}" onclick="verFoto('${k}',${i})"/>
+        <button class="foto-del" onclick="removerFoto('${k}',${i},${codigo})">×</button>
+      </div>`).join('') +
+  '</div>';
+}
+
+function removerFoto(k, idx, codigo) {
+  if (!S.fotos[k]) return;
+  S.fotos[k].splice(idx, 1);
+  if (!S.fotos[k].length) delete S.fotos[k];
+  salvar();
+  atualizarFotosDom(codigo);
+}
+
+function verFoto(k, idx) {
+  const f = (S.fotos[k] || [])[idx];
+  if (!f) return;
+  const w = window.open('', '_blank');
+  w.document.write('<body style="margin:0;background:#000"><img src="' + f.b64 + '" style="max-width:100%;height:auto"/></body>');
+}
+
+// ================================================================
+// INTEGRAÇÃO COM API — fiscalizações planejadas
+// ================================================================
+// URL da API vinda do config.js (carregado no <head>)
+const API_BASE_URL = (typeof CONFIG !== 'undefined')
+  ? CONFIG.API_URL
+  : 'https://sistema-fisc-production.up.railway.app/api/v1';
+
+// Dados de analistas/coordenadores embutidos (atualizados no download)
+let ANALISTAS_DATA = [{"id": "613c1586-8f92-4587-8c33-07a4f7996210", "nome": "Arthur Almeida", "cargo": "Analista"}, {"id": "c53f2f0d-8822-4721-9715-b21f8ff0b167", "nome": "Douglas Almeida", "cargo": "Coordenador"}, {"id": "25490b6b-d3b9-4ea8-8e22-dfcee44946aa", "nome": "Lílian de Oliveira", "cargo": "Analista"}];  // preenchido pelo download atualizado ou pela API
+
+// ── Sincronização de municípios ──────────────────────────────────────────────
+// Chave e tempo de expiração do cache (12 horas)
+const CACHE_KEY      = 'arisb_residuos_municipios_cache';
+const CACHE_TS_KEY   = 'arisb_municipios_ts';
+const CACHE_TTL_MS   = 12 * 60 * 60 * 1000; // 12h
+
+async function sincronizarMunicipios() {
+  // Formulário de acompanhamento: dados pré-filtrados pelo servidor — não sincronizar.
+  if (typeof IS_ACOMPANHAMENTO_FORM !== 'undefined' && IS_ACOMPANHAMENTO_FORM) {
+    console.log('[Sync] Formulário de acompanhamento — usando dados embutidos filtrados.');
+    mostrarStatusSync(MUNICIPIOS_DATA.length, true);
+    return;
+  }
+  // Endpoint público — não precisa de token
+  try {
+    const resp = await fetch(`${API_BASE_URL}/cadastro/municipios/sync/formulario?categoria=residuos_solidos`, {
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const dados = await resp.json();
+
+    if (Array.isArray(dados) && dados.length > 0) {
+      MUNICIPIOS_DATA = dados;
+      localStorage.setItem(CACHE_KEY,    JSON.stringify(dados));
+      localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+      console.log(`[Sync] ${dados.length} municípios sincronizados da API`);
+      mostrarStatusSync(dados.length, true);
+    } else {
+      throw new Error('Sem dados');
+    }
+  } catch (e) {
+    // Sem internet ou erro — tenta usar cache
+    const cached = localStorage.getItem(CACHE_KEY);
+    const ts     = Number(localStorage.getItem(CACHE_TS_KEY) || 0);
+    if (cached) {
+      MUNICIPIOS_DATA = JSON.parse(cached);
+      const horas = Math.round((Date.now() - ts) / 3600000);
+      console.log(`[Sync] Usando cache (${horas}h atrás) — ${MUNICIPIOS_DATA.length} municípios`);
+      mostrarStatusSync(MUNICIPIOS_DATA.length, false, horas);
+    } else {
+      console.log('[Sync] Sem internet e sem cache — usando dados embutidos');
+      mostrarStatusSync(MUNICIPIOS_DATA.length, false, null);
+    }
+  }
+}
+
+function mostrarStatusSync(total, online, horasCache) {
+  const el = document.getElementById('status-sync');
+  if (!el) return;
+  if (online) {
+    el.innerHTML = `✅ ${total} municípios atualizados agora`;
+    el.style.color = '#1a7a4a';
+  } else if (horasCache !== null) {
+    el.innerHTML = `⚠️ Offline — dados de ${horasCache}h atrás (${total} municípios)`;
+    el.style.color = '#c8861a';
+  } else {
+    el.innerHTML = `📦 Dados embutidos — conecte-se para atualizar`;
+    el.style.color = '#666';
+  }
+}
+let _fiscalizacoesPlanejadas = [];
+let _fiscSelecionada = null;
+
+async function buscarFiscalizacoesAPI() {
+  const token = localStorage.getItem('arisb_token');
+  if (!token || !navigator.onLine) return null;
+  try {
+    const resp = await fetch(`${API_BASE_URL}/fiscalizacoes?por_pagina=50`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return (data.items || []).filter(f => ['planejada','em_campo'].includes(f.status));
+  } catch { return null; }
+}
+
+async function buscarInstalacoesAPI(municipioId, municipioNome) {
+  const token = localStorage.getItem('arisb_token');
+  if (!token) return null;
+  try {
+    const resp = await fetch(
+      `${API_BASE_URL}/cadastro/instalacoes?municipio_id=${municipioId}&apenas_ativas=true&por_pagina=200`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const ICONE = {'CAP-SUB':'🔩','CAP-SUP':'🌊','ETA':'🏭','ETE':'⚙️','EEAB':'🔧','EEAT':'🔧','EEE':'💧','RES':'🗃️','LAB':'🧪','ATD':'🏢'};
+    return (data.items || []).map(i => ({
+      id:        i.id,
+      nome:      i.nome,
+      tipo:      i.tipo_instalacao_sigla || i.tipo_instalacao_nome || '?',
+      icon:      ICONE[i.tipo_instalacao_sigla] || '🏗️',
+      municipio: municipioNome,
+      prestador: i.prestador_nome || '—',
+      lat:       i.latitude,
+      lon:       i.longitude,
+    }));
+  } catch { return null; }
+}
+
+async function iniciarNoServidor(fiscalizacaoId) {
+  const token = localStorage.getItem('arisb_token');
+  if (!token) return;
+  try {
+    await fetch(`${API_BASE_URL}/fiscalizacoes/${fiscalizacaoId}/iniciar`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device_id: S.deviceId || `offline-${Date.now()}` }),
+    });
+  } catch {}
+}
+
+function renderFiscPlanejadas(lista) {
+  const div = document.getElementById('fisc-planejadas-list');
+  if (!div) return;
+  if (!lista || lista.length === 0) {
+    div.innerHTML = `<div style="text-align:center;padding:16px;color:var(--steel);font-size:13px;
+      background:var(--paper);border-radius:var(--r);border:1px solid var(--mist)">
+      Nenhuma fiscalização planejada no momento.<br>
+      <span style="font-size:11px">Preencha os dados manualmente abaixo.</span></div>`;
+    return;
+  }
+  div.innerHTML = lista.map(f => {
+    const sel = _fiscSelecionada && _fiscSelecionada.id === f.id;
+    const corStatus = f.status === 'em_campo' ? 'var(--signal)' : 'var(--steel)';
+    const lblStatus = f.status === 'em_campo' ? '● Em campo' : '● Planejada';
+    return `<div onclick="selecionarFisc('${f.id}')"
+      style="background:${sel ? 'rgba(0,200,150,.08)' : 'var(--white)'};
+             border:2px solid ${sel ? 'var(--signal)' : 'var(--mist)'};
+             border-radius:var(--r-lg);padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--ink)">
+          ${f.numero_ordem || f.id.slice(0,8)}</span>
+        <span style="font-family:var(--font-mono);font-size:10px;color:${corStatus};font-weight:600">${lblStatus}</span>
+      </div>
+      <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px">${f.municipio_nome || '—'}</div>
+      <div style="font-size:12px;color:var(--steel)">${f.prestador_nome || '—'} · ${f.data_planejada || ''}</div>
+      ${f.informacoes_gerais ? `<div style="font-size:11px;color:var(--steel);margin-top:3px;font-style:italic">${f.informacoes_gerais}</div>` : ''}
+      ${sel ? `<div style="margin-top:6px;font-size:11px;font-weight:700;color:var(--signal)">✓ SELECIONADA</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function selecionarFisc(id) {
+  _fiscSelecionada = _fiscalizacoesPlanejadas.find(f => f.id === id) || null;
+  if (_fiscSelecionada) {
+    const f = _fiscSelecionada;
+
+    // Preenche campos visíveis (nome do fiscal obrigatório)
+    const nomeLogado = localStorage.getItem('arisb_nome') || '';
+    // Preenche o select de analistas ou campo manual
+    const selFisc = document.getElementById('id-fiscal');
+    if (selFisc && [...selFisc.options].find(o => o.value === nomeLogado)) {
+      selFisc.value = nomeLogado;
+    } else {
+      document.getElementById('id-fiscal-manual').style.display = 'block';
+      document.getElementById('id-fiscal-manual').value = nomeLogado;
+    }
+    document.getElementById('id-data').value   = f.data_planejada || '';
+    document.getElementById('id-os').value     = f.numero_ordem   || '';
+    document.getElementById('id-obs').value    = f.informacoes_gerais || '';
+
+    // Garante que o bloco manual esteja visível para o nome do fiscal
+    document.getElementById('bloco-manual').style.display = 'block';
+    document.getElementById('btn-toggle-manual').textContent = '← Ocultar';
+
+    // Tenta encontrar o município nos dados locais
+    const munLocal = MUNICIPIOS_DATA.find(m => m.nome === f.municipio_nome);
+    if (munLocal) {
+      S.municipio = munLocal;
+      document.getElementById('mun-select').value = munLocal.nome;
+      mostrarInfoMunicipio(munLocal);
+    } else {
+      // Município não está nos dados locais (ex: novo município)
+      // Cria um objeto mínimo para não bloquear o fluxo
+      S.municipio = {
+        nome:        f.municipio_nome || '—',
+        prestador:   f.prestador_nome || '—',
+        instalacoes: [],
+      };
+    }
+
+    // Feedback visual: mostra confirmação no card
+    renderFiscPlanejadas(_fiscalizacoesPlanejadas);
+
+    // Rola para o campo de nome do fiscal para o usuário confirmar
+    setTimeout(() => {
+      const campoNome = document.getElementById('id-fiscal');
+      if (campoNome) campoNome.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+  }
+}
+
+function toggleModoManual() {
+  const b = document.getElementById('bloco-manual');
+  const v = b.style.display !== 'none';
+  b.style.display = v ? 'none' : 'block';
+  document.getElementById('btn-toggle-manual').textContent = v ? '✏️ Manual' : '← Ocultar';
+}
+
+async function carregarAnalistasSelect() {
+  const sel = document.getElementById('id-fiscal');
+
+  // Primeiro tenta usar dados embutidos (ANALISTAS_DATA)
+  let analistas = Array.isArray(ANALISTAS_DATA) && ANALISTAS_DATA.length > 0
+    ? ANALISTAS_DATA : null;
+
+  // Se não houver dados embutidos, tenta buscar da API
+  if (!analistas) {
+    const token = localStorage.getItem('arisb_token');
+    if (navigator.onLine && token) {
+      try {
+        const resp = await fetch(
+          `${API_BASE_URL}/cadastro/analistas?apenas_ativos=true&por_pagina=100`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          analistas = data.items || [];
+        }
+      } catch {}
+    }
+  }
+
+  if (!analistas || analistas.length === 0) {
+    sel.style.display = 'none';
+    document.getElementById('id-fiscal-manual').style.display = 'block';
+    if (S.fiscal) document.getElementById('id-fiscal-manual').value = S.fiscal;
+    return;
+  }
+
+  sel.innerHTML = '<option value="">— Selecione o analista —</option>' +
+    analistas.map(a =>
+      `<option value="${a.nome}" data-id="${a.id || ''}">${a.nome}${a.cargo ? ' · ' + a.cargo : ''}</option>`
+    ).join('');
+
+  // Pré-seleciona o usuário logado se encontrado
+  const nomeLogado = localStorage.getItem('arisb_nome') || '';
+  if (nomeLogado) {
+    const opt = [...sel.options].find(o => o.value === nomeLogado);
+    if (opt) sel.value = opt.value;
+  }
+
+  // Restaura seleção salva
+  if (S.fiscal) {
+    const opt = [...sel.options].find(o => o.value === S.fiscal);
+    if (opt) sel.value = S.fiscal;
+  }
+}
+
+// ================================================================
+// TELA 0: IDENTIFICAÇÃO
+// ================================================================
+async function initIdent() {
+  const sel = document.getElementById('mun-select');
+
+  // Sincroniza municípios da API ANTES de popular o select
+  await sincronizarMunicipios();
+
+  // Atualiza S.municipio com o objeto atual do MUNICIPIOS_DATA (pode ter instalações diferentes
+  // do cache de sessão, especialmente em formulários de acompanhamento com filtro de NCs)
+  if (S.municipio) {
+    const munAtual = MUNICIPIOS_DATA.find(m => m.nome === S.municipio.nome);
+    S.municipio = munAtual || null;
+  }
+
+  // Popula o select com os dados já atualizados
+  MUNICIPIOS_DATA.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.nome; opt.textContent = m.nome;
+    sel.appendChild(opt);
+  });
+  if (S.data)    document.getElementById('id-data').value  = S.data;
+  if (S.os)      document.getElementById('id-os').value    = S.os;
+  if (S.obsInic) document.getElementById('id-obs').value   = S.obsInic;
+  if (S.municipio){ sel.value = S.municipio.nome; mostrarInfoMunicipio(S.municipio); }
+  if (!S.data) document.getElementById('id-data').valueAsDate = new Date();
+
+  sel.addEventListener('change', () => {
+    const mun = MUNICIPIOS_DATA.find(m => m.nome === sel.value);
+    S.municipio = mun || null;
+    mostrarInfoMunicipio(mun);
+    salvar();
+  });
+
+  // Carrega analistas da API para o select de fiscal
+  await carregarAnalistasSelect();
+
+  const token = localStorage.getItem('arisb_token');
+  if (navigator.onLine && token) {
+    document.getElementById('bloco-api').style.display = 'block';
+    document.getElementById('bloco-manual').style.display = 'none';
+    document.getElementById('btn-toggle-manual').style.display = 'inline-flex';
+    const lista = await buscarFiscalizacoesAPI();
+    if (lista !== null) {
+      _fiscalizacoesPlanejadas = lista;
+      renderFiscPlanejadas(lista);
+    } else {
+      document.getElementById('bloco-api').style.display = 'none';
+      document.getElementById('bloco-manual').style.display = 'block';
+      document.getElementById('btn-toggle-manual').style.display = 'none';
+    }
+  } else {
+    document.getElementById('bloco-manual').style.display = 'block';
+  }
+}
+
+function mostrarInfoMunicipio(mun) {
+  const div = document.getElementById('mun-info');
+  if (!mun) { div.innerHTML = ''; return; }
+  const total = mun.instalacoes.length;
+  const tipos = [...new Set(mun.instalacoes.map(i => i.tipo))].length;
+  const resp  = mun.instalacoes.reduce((a, i) => a + progInstalacao(i).resp, 0);
+  const totalIt = mun.instalacoes.reduce((a, i) => a + getItens(i).length, 0);
+  div.innerHTML = `
+    <span class="mun-chip active">${mun.prestador}</span>
+    <span class="mun-chip">${total} instalações</span>
+    <span class="mun-chip">${tipos} tipos</span>
+    ${resp > 0 ? `<span class="mun-chip" style="background:var(--signal-bg);border-color:var(--signal);color:var(--signal)">${resp}/${totalIt} respondidos</span>` : ''}`;
+}
+
+// ================================================================
+// GPS — captura coordenadas para a instalação atual
+// ================================================================
+function capturarGPS() {
+  const gpsInfo = document.getElementById('gps-info');
+  if (!navigator.geolocation) {
+    gpsInfo.textContent = '❌ GPS não disponível neste dispositivo';
+    return;
+  }
+  gpsInfo.textContent = '🔄 Obtendo localização...';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const ts  = new Date().toISOString();
+      const instId = S.instAtual?.id;
+      if (instId) {
+        S.gps[instId] = { lat, lon, ts };
+        salvar();
+      }
+      gpsInfo.textContent = `📍 ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    },
+    err => {
+      gpsInfo.textContent = `❌ Erro: ${err.message}`;
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+// ================================================================
+// NOVA INSTALAÇÃO — adicionar instalação não cadastrada em campo
+// ================================================================
+let _novaInstGPS = null;
+
+function abrirModalNovaInstalacao() {
+  if (!S.municipio) { mostrarToast('Selecione um município primeiro.'); return; }
+  document.getElementById('nova-inst-nome').value = '';
+  document.getElementById('nova-inst-obs').value  = '';
+  document.getElementById('nova-inst-gps').textContent = 'Não capturado';
+  _novaInstGPS = null;
+  if (S.filtroTipo && S.filtroTipo !== 'todos') {
+    document.getElementById('nova-inst-tipo').value = S.filtroTipo;
+  }
+  document.getElementById('modal-nova-inst-ov').style.display = 'flex';
+}
+
+function fecharModalNovaInstalacao(e) {
+  if (!e || e.target === document.getElementById('modal-nova-inst-ov')) {
+    document.getElementById('modal-nova-inst-ov').style.display = 'none';
+  }
+}
+
+function capturarGPSNovaInst() {
+  const el = document.getElementById('nova-inst-gps');
+  if (!navigator.geolocation) { el.textContent = '❌ GPS não disponível'; return; }
+  el.textContent = '🔄 Obtendo...';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      _novaInstGPS = { lat: pos.coords.latitude, lon: pos.coords.longitude, ts: new Date().toISOString() };
+      el.textContent = `📍 ${_novaInstGPS.lat.toFixed(5)}, ${_novaInstGPS.lon.toFixed(5)}`;
+    },
+    err => { el.textContent = `❌ ${err.message}`; },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+function confirmarNovaInstalacao() {
+  const nome = document.getElementById('nova-inst-nome').value.trim();
+  const tipo = document.getElementById('nova-inst-tipo').value;
+  const obs  = document.getElementById('nova-inst-obs').value.trim();
+
+  if (!nome) { mostrarToast('Informe o nome da instalação.'); return; }
+
+  // Gera ID temporário único
+  const id = `NOVA_${Date.now()}`;
+  const novaInst = {
+    id,
+    nome,
+    tipo,
+    nova: true,      // marcador para identificar no import
+    obs:  obs || null,
+    lat:  _novaInstGPS?.lat || null,
+    lon:  _novaInstGPS?.lon || null,
+    ts:   _novaInstGPS?.ts  || null,
+  };
+
+  // Salva GPS no estado
+  if (_novaInstGPS) {
+    S.gps[id] = { lat: _novaInstGPS.lat, lon: _novaInstGPS.lon, ts: _novaInstGPS.ts };
+  }
+
+  // Adiciona à lista de instalações do município
+  S.municipio.instalacoes.push(novaInst);
+  salvar();
+  fecharModalNovaInstalacao();
+  renderizarLista();
+  mostrarToast(`✓ "${nome}" adicionada ao checklist.`);
+}
+
+function iniciarFiscalizacao() {
+  // Se há uma fiscalização planejada selecionada, usa os dados dela diretamente
+  if (_fiscSelecionada) {
+    const f = _fiscSelecionada;
+
+    // Nome do fiscal é obrigatório mesmo com OS selecionada
+    const nomeFiscal = document.getElementById('id-fiscal').value.trim();
+    if (!nomeFiscal) {
+      toast('⚠️ Confirme seu nome no campo acima.');
+      document.getElementById('id-fiscal').focus();
+      return;
+    }
+
+    S.fiscal         = nomeFiscal;
+    S.data           = f.data_planejada || document.getElementById('id-data').value;
+    S.os             = f.numero_ordem   || '';
+    S.obsInic        = f.informacoes_gerais || '';
+    S.fiscalizacaoId = f.id;
+    S.deviceId       = `offline-${Date.now()}`;
+
+    // Busca município nos dados embutidos (busca robusta, ignora acentos/case)
+    const normalizar = s => s ? s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim() : '';
+    const nomeBusca  = normalizar(f.municipio_nome);
+    const munLocal   = MUNICIPIOS_DATA.find(m => normalizar(m.nome) === nomeBusca);
+
+    if (munLocal && munLocal.instalacoes && munLocal.instalacoes.length > 0) {
+      // Município encontrado com instalações nos dados embutidos — usa direto
+      S.municipio = munLocal;
+    } else {
+      // Não encontrado ou sem instalações — busca da API
+      S.municipio = {
+        nome:        f.municipio_nome || '—',
+        prestador:   f.prestador_nome || '—',
+        instalacoes: [],
+      };
+      // Tenta buscar instalações da API em background
+      if (navigator.onLine) {
+        buscarInstalacoesAPI(f.municipio_id, f.municipio_nome).then(insts => {
+          if (insts && insts.length > 0) {
+            S.municipio.instalacoes = insts;
+            salvar();
+            renderizarLista();
+          }
+        });
+      }
+    }
+
+    salvar();
+
+    if (navigator.onLine) {
+      iniciarNoServidor(f.id);
+    }
+    toast(`📋 ${f.numero_ordem || f.municipio_nome} — iniciada!`, 2000);
+
+    renderizarLista();
+    mostrarTela('scr-lista');
+    return;
+  }
+
+  // Modo manual — validações completas
+  // Lê fiscal do select (online) ou do campo manual (offline)
+  const selFiscal = document.getElementById('id-fiscal');
+  const manFiscal = document.getElementById('id-fiscal-manual');
+  S.fiscal = (selFiscal.style.display !== 'none'
+    ? selFiscal.value
+    : manFiscal.value
+  ).trim();
+  S.data    = document.getElementById('id-data').value;
+  S.os      = document.getElementById('id-os').value.trim();
+  S.obsInic = document.getElementById('id-obs').value.trim();
+  if (!S.fiscal)    { toast('⚠️ Informe o nome do fiscal.'); return; }
+  if (!S.municipio) { toast('⚠️ Selecione o município.'); return; }
+  S.fiscalizacaoId = null;
+  S.deviceId = `offline-${Date.now()}`;
+  salvar();
+  S.filtroBusca = '';
+  const buscaEl = document.getElementById('busca-instalacao');
+  if (buscaEl) buscaEl.value = '';
+  renderizarLista();
+  mostrarTela('scr-lista');
+}
+
+function voltarIdent() {
+  document.getElementById('topbar-title').textContent = 'Fiscalização Offline';
+  mostrarTela('scr-ident');
+  mostrarInfoMunicipio(S.municipio);
+}
+
+// ================================================================
+// TELA 1: LISTA DE INSTALAÇÕES
+// ================================================================
+function renderizarLista() {
+  const mun = S.municipio;
+  document.getElementById('topbar-title').textContent = mun.nome;
+
+  // Filtros de tipo
+  const tipos = [...new Set(mun.instalacoes.map(i => i.tipo))].sort();
+  const tf = document.getElementById('type-filters');
+  tf.innerHTML = `<div class="tf ${S.filtroTipo==='todos'?'active':''}" onclick="filtrarTipo('todos',this)">TODOS</div>` +
+    tipos.map(t => `<div class="tf ${S.filtroTipo===t?'active':''}" onclick="filtrarTipo('${t}',this)">${t}</div>`).join('');
+
+  renderizarCards();
+}
+
+function filtrarListaInstalacoes(termo) {
+  S.filtroBusca = (termo || '').trim().toLowerCase();
+  renderizarCards();
+}
+
+function renderizarCards() {
+  const mun = S.municipio;
+  let lista = S.filtroTipo === 'todos'
+    ? mun.instalacoes
+    : mun.instalacoes.filter(i => i.tipo === S.filtroTipo);
+
+  // Aplica filtro de texto
+  if (S.filtroBusca) {
+    lista = lista.filter(i => i.nome.toLowerCase().includes(S.filtroBusca));
+  }
+
+  const scroll = document.getElementById('lista-scroll');
+
+  if (lista.length === 0) {
+    scroll.innerHTML = `<div class="empty"><div class="eico">🔍</div><div class="etxt">Nenhuma instalação deste tipo.</div></div>`;
+    return;
+  }
+
+  // Progresso geral
+  const totalIt = mun.instalacoes.reduce((a,i) => a + getItens(i).length, 0);
+  const totalResp = mun.instalacoes.reduce((a,i) => a + progInstalacao(i).resp, 0);
+  const pctGeral = totalIt ? Math.round(totalResp / totalIt * 100) : 0;
+
+  let html = `<div class="sec-header"><span class="sec-tag">${mun.nome}</span><div class="sec-line"></div>
+    <span style="font-family:var(--font-mono);font-size:11px;color:${corConf(pctGeral)};font-weight:700">${pctGeral}%</span>
+  </div>`;
+
+  lista.forEach(inst => {
+    const { resp, total } = progInstalacao(inst);
+    const done = resp === total && total > 0;
+    const itens = getItens(inst);
+    const ncs = itens.filter(it => S.respostas[key(inst.id, it.codigo)] === 'nao').length;
+    const ncBadge = ncs > 0 ? `<span class="nc-pill">${ncs} NC</span>` : '';
+    html += `
+      <div class="inst-card ${done ? 'done-card' : ''} fade-in" onclick="abrirInstalacao('${inst.id}')">
+        <div class="inst-icon">${ICONE[inst.tipo] || '🏗️'}</div>
+        <div class="inst-body">
+          <div class="inst-name">${inst.nome}${ncBadge}</div>
+          <div class="inst-meta">${inst.tipo} · ${total} itens</div>
+        </div>
+        <div class="inst-prog ${done?'done':''}">${resp}/${total}</div>
+      </div>`;
+  });
+
+  scroll.innerHTML = html;
+}
+
+function filtrarTipo(tipo, el) {
+  document.querySelectorAll('#type-filters .tf').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  S.filtroTipo = tipo;
+  renderizarCards();
+}
+
+// ================================================================
+// TELA 2: FORMULÁRIO
+// ================================================================
+function abrirInstalacao(id) {
+  const inst = S.municipio.instalacoes.find(i => i.id === id);
+  if (!inst) return;
+  S.instAtual = inst;
+  S.filtroItens = 'todos';
+  document.getElementById('topbar-title').textContent = inst.nome;
+  // Mostra coordenadas capturadas se já existirem
+  const gpsInfo = document.getElementById('gps-info');
+  if (gpsInfo) {
+    const g = S.gps[inst.id];
+    gpsInfo.textContent = g ? `📍 ${g.lat.toFixed(5)}, ${g.lon.toFixed(5)}` : '';
+  }
+  document.querySelectorAll('#form-filters .tf').forEach(t => {
+    t.classList.toggle('active', t.dataset.f === 'todos');
+  });
+  renderizarChecklist();
+  mostrarTela('scr-form');
+}
+
+function renderizarChecklist() {
+  const inst  = S.instAtual;
+  const todos = getItens(inst);
+  const f     = S.filtroItens;
+
+  let visiveis = todos;
+  if (f === 'pendentes') visiveis = todos.filter(it => S.respostas[key(inst.id, it.codigo)] === undefined);
+  if (f === 'nao')       visiveis = todos.filter(it => S.respostas[key(inst.id, it.codigo)] === 'nao');
+  if (f === 'sim')       visiveis = todos.filter(it => S.respostas[key(inst.id, it.codigo)] === 'sim');
+
+  // Progresso
+  const resp  = todos.filter(it => S.respostas[key(inst.id, it.codigo)] !== undefined).length;
+  const total = todos.length;
+  const pct   = total ? Math.round(resp / total * 100) : 0;
+  document.getElementById('prog-fill').style.width  = pct + '%';
+  document.getElementById('prog-label').textContent  = `${resp} / ${total}`;
+  document.getElementById('btn-concluir').style.background =
+    resp === total ? 'var(--signal)' : 'var(--ink)';
+  document.getElementById('btn-concluir').style.color =
+    resp === total ? 'var(--ink)' : 'white';
+
+  const scroll = document.getElementById('form-scroll');
+
+  if (visiveis.length === 0) {
+    const msgs = {
+      pendentes: '✅ Nenhum item pendente!',
+      nao:       '✅ Nenhuma não conformidade.',
+      sim:       '— Nenhum item conforme ainda.',
+      todos:     '✅ Todos os itens respondidos!',
+    };
+    scroll.innerHTML = `<div class="empty"><div class="eico">${f==='pendentes'?'✅':'🔍'}</div><div class="etxt">${msgs[f]}</div></div>`;
+    return;
+  }
+
+  // Agrupa por bloco (primeiro número do item)
+const NOMES_GRUPO = {
+  nr136: {
+    '1': 'PLANEJAMENTO E ADMINISTRAÇÃO',
+    '2': 'DESTINAÇÃO FINAL',
+    '3': 'COLETA',
+    '4': 'TRANSBORDO',
+    '5': 'TRIAGEM PARA FINS DE REUTILIZAÇÃO OU RECICLAGEM',
+    '6': 'TRANSPORTE',
+    '7': 'TRATAMENTO'
+  },
+  nr7_SLU: {
+    '1': 'VARRIÇÃO',
+    '2': 'CAPINA E RASPAGEM',
+    '3': 'ROÇADA',
+    '4': 'PODA',
+    '5': 'LIMPEZA E ASSEIO DE LOGRADOUROS PÚBLICOS',
+    '6': 'DESOBSTRUÇÃO E LIMPEZA DE BUEIROS, BOCAS DE LOBO E CORRELATOS',
+    '7': 'REMOÇÃO DE RESÍDUOS EM LOGRADOUROS PÚBLICOS'
+  },
+  nr7_SMRS: {
+    '1': 'DESTINAÇÃO FINAL',
+    '2': 'COLETA',
+    '3': 'TRANSBORDO',
+    '4': 'TRIAGEM PARA FINS DE REUTILIZAÇÃO E RECICLAGEM',
+    '5': 'TRANSPORTE',
+    '6': 'TRATAMENTO'
+  }
+};
+
+const grupos = {};
+const tipoChecklist = (CHECKLIST_DATA[inst.tipo] || {}).tipo_checklist || '';
+console.log(tipoChecklist);
+console.log(CHECKLIST_DATA[inst.tipo]);
+visiveis.forEach(it => {
+  const grpNumero = String(it.item).split('.')[0];
+  let mapa;
+  if (tipoChecklist === 'nr136') {
+    mapa = NOMES_GRUPO.nr136;
+  } else if (tipoChecklist === 'nr7') {
+    mapa = inst.tipo === 'SLU' ? NOMES_GRUPO.nr7_SLU : NOMES_GRUPO.nr7_SMRS;
+  }
+
+  const grp = (mapa && mapa[grpNumero]) || grpNumero;
+  if (!grupos[grp]) grupos[grp] = [];
+  grupos[grp].push(it);
+});
+
+  let html = '';
+  Object.entries(grupos).forEach(([grp, itens], gi) => {
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:12px 0 6px">
+      <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--steel)">${grp}</span>
+      <div style="flex:1;height:1px;background:var(--steel)"></div>
+    </div>`;
+
+    itens.forEach((it, idx) => {
+      const r   = S.respostas[key(inst.id, it.codigo)];
+      const obsV= S.obs[key(inst.id, it.codigo)] || '';
+      const dc  = dotClass(r);
+      html += `
+        <div class="ci-card ${r ? 'answered-'+r : ''} fade-in" id="ci-${it.codigo}"
+             style="animation-delay:${idx*0.03}s">
+          <div class="ci-header" onclick="toggleCI(${it.codigo})">
+            <span class="ci-num">#${it.codigo}</span>
+            <div class="ci-body">
+              <div class="ci-code">${it.item}</div>
+              <div class="ci-desc">${it.descricao}</div>
+              ${it.referencia ? `<div class="ci-ref">${it.referencia}</div>` : ''}
+            </div>
+            ${(it.tipo_checklist === 'nc' && it.enquadramento) ? `<span class="enq-badge ${enqClass(it.enquadramento)}">${it.enquadramento.toUpperCase().slice(0,4)}</span>` : ''}
+            <div class="ci-dot ${dc}"></div>
+          </div>
+          <div class="resp-wrap" id="resp-${it.codigo}" style="display:none">
+            <div class="resp-lbl">RESPOSTA</div>
+            <div class="resp-grid">
+              ${it.tipo_checklist === 'nc' ? `
+              <button class="btn-r ${r==='sim'?'sel-sim':''}" onclick="responder(${it.codigo},'sim')">
+                <span class="ico">✓</span>Conforme
+              </button>
+              <button class="btn-r ${r==='nao'?'sel-nao':''}" onclick="responder(${it.codigo},'nao')">
+                <span class="ico">✗</span>Não conforme
+              </button>
+              <button class="btn-r ${r==='na'?'sel-na':''}" onclick="responder(${it.codigo},'na')">
+                <span class="ico">—</span>Não aplica
+              </button>
+              <button class="btn-r ${r==='nv'?'sel-nv':''}" onclick="responder(${it.codigo},'nv')">
+                <span class="ico">?</span>Não verif.
+              </button>` : `
+              <button class="btn-r ${r==='sim'?'sel-sim':''}" onclick="responder(${it.codigo},'sim')">
+                <span class="ico">✓</span>Atende
+              </button>
+              <button class="btn-r ${r==='nao'?'sel-nao':''}" onclick="responder(${it.codigo},'nao')">
+                <span class="ico">✗</span>Não Atende
+              </button>
+              <button class="btn-r ${r==='nv'?'sel-nv':''}" onclick="responder(${it.codigo},'nv')">
+                <span class="ico">?</span>Não verif.
+              </button>`}
+            </div>
+            <div class="obs-area open" id="obs-${it.codigo}" style="margin-top:8px">
+              <textarea class="obs-ta"
+                placeholder="Observações sobre este item..."
+                onchange="salvarObs(${it.codigo},this.value)"
+              >${obsV}</textarea>
+            </div>
+            <div class="foto-bar">
+              <button class="btn-cam" onclick="abrirCam(${it.codigo})">📷 Foto</button>
+              <span class="foto-count-lbl" id="foto-lbl-${it.codigo}"
+                style="display:${(S.fotos && S.fotos[key(inst.id, it.codigo)] && S.fotos[key(inst.id, it.codigo)].length) ? 'inline' : 'none'}">
+                ${(S.fotos && S.fotos[key(inst.id, it.codigo)]) ? S.fotos[key(inst.id, it.codigo)].length + ' foto(s)' : ''}
+              </span>
+            </div>
+            <div id="foto-grid-${it.codigo}"></div>
+            ${it.tipo_checklist === 'nc' ? `<div class="prazo-info">
+              PRAZO: <span class="prazo-val">${it.prazo}</span>
+              &nbsp;·&nbsp; ${it.nc || '—'}
+            </div>` : ''}
+          </div>
+        </div>`;
+    });
+  });
+
+  scroll.innerHTML = html;
+
+  // Restaura thumbnails das fotos já tiradas
+  if (S.fotos) {
+    Object.entries(S.fotos).forEach(([k, arr]) => {
+      if (!k.startsWith(inst.id + '::')) return;
+      const cod = parseInt(k.split('::')[1]);
+      if (arr.length > 0) atualizarFotosDom(cod);
+    });
+  }
+
+  // Auto-abre primeiro pendente
+  const primeiro = visiveis.find(it => S.respostas[key(inst.id, it.codigo)] === undefined);
+  if (primeiro) {
+    const el = document.getElementById(`resp-${primeiro.codigo}`);
+    if (el) el.style.display = 'block';
+  }
+}
+
+function toggleCI(cod) {
+  const el = document.getElementById(`resp-${cod}`);
+  if (!el) return;
+  const aberto = el.style.display !== 'none';
+  document.querySelectorAll('[id^="resp-"]').forEach(e => e.style.display = 'none');
+  if (!aberto) el.style.display = 'block';
+}
+
+function responder(cod, valor) {
+  const inst = S.instAtual;
+  S.respostas[key(inst.id, cod)] = valor;
+  salvar();
+
+  setTimeout(() => {
+    renderizarChecklist();
+    // Avança para o próximo pendente
+    if (S.filtroItens === 'todos' || S.filtroItens === 'pendentes') {
+      const todos = getItens(inst);
+      const idx   = todos.findIndex(it => it.codigo === cod);
+      const prox  = todos.slice(idx + 1).find(it => S.respostas[key(inst.id, it.codigo)] === undefined);
+      if (prox) {
+        const el = document.getElementById(`resp-${prox.codigo}`);
+        if (el) { el.style.display = 'block'; el.scrollIntoView({ behavior:'smooth', block:'center' }); }
+      }
+    }
+    const labels = { sim:'✓ Conforme', nao:'✗ Não conforme', na:'— Não aplica', nv:'? Não verificado' };
+    toast(labels[valor]);
+  }, 120);
+}
+
+function salvarObs(cod, texto) {
+  const k = key(S.instAtual.id, cod);
+  if (texto.trim()) S.obs[k] = texto;
+  else delete S.obs[k];
+  salvar();
+}
+
+function toggleObs(cod) {
+  document.getElementById(`obs-${cod}`)?.classList.toggle('open');
+}
+
+function filtrarItens(el) {
+  document.querySelectorAll('#form-filters .tf').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  S.filtroItens = el.dataset.f;
+  renderizarChecklist();
+}
+
+function concluirInstalacao() {
+  const inst   = S.instAtual;
+  const itens  = (CHECKLIST_DATA[inst.tipo] || {}).itens || [];
+  const { resp, total } = progInstalacao(inst);
+  if (resp < total) {
+    if (!confirm(`Ainda há ${total - resp} item(s) sem resposta. Concluir mesmo assim?`)) return;
+  }
+  abrirResumoInstalacao(inst);
+}
+
+function voltarLista() {
+  document.getElementById('topbar-title').textContent = S.municipio.nome;
+  S.instAtual = null;
+  renderizarCards();
+  mostrarTela('scr-lista');
+}
+
+// ================================================================
+// RESUMOS
+// ================================================================
+function abrirResumoInstalacao(inst) {
+  const itens = (CHECKLIST_DATA[inst.tipo] || {}).itens || [];
+  const sim = itens.filter(it => S.respostas[key(inst.id, it.codigo)] === 'sim').length;
+  const nao = itens.filter(it => S.respostas[key(inst.id, it.codigo)] === 'nao').length;
+  const na  = itens.filter(it => S.respostas[key(inst.id, it.codigo)] === 'na').length;
+  const nv  = itens.filter(it => S.respostas[key(inst.id, it.codigo)] === 'nv').length;
+  const aplic = itens.length - na;
+  const pct   = aplic > 0 ? Math.round(sim / aplic * 100) : 0;
+  const ncs   = itens.filter(it => S.respostas[key(inst.id, it.codigo)] === 'nao');
+
+  document.getElementById('modal-title').textContent = inst.nome;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="res-grid">
+      <div class="res-box"><div class="res-val rv-s">${sim}</div><div class="res-key">Conforme</div></div>
+      <div class="res-box"><div class="res-val rv-n">${nao}</div><div class="res-key">Não conforme</div></div>
+      <div class="res-box"><div class="res-val rv-a">${na}</div><div class="res-key">Não aplica</div></div>
+      <div class="res-box"><div class="res-val rv-v">${nv}</div><div class="res-key">Não verif.</div></div>
+    </div>
+    <div style="text-align:center;padding:14px;background:var(--fog);border-radius:var(--r);margin-bottom:12px">
+      <div style="font-family:var(--font-mono);font-size:40px;font-weight:700;color:${corConf(pct)}">${pct}%</div>
+      <div style="font-size:12px;color:var(--steel)">Índice de Conformidade</div>
+    </div>
+    ${ncs.length > 0 ? `
+      <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--steel);margin-bottom:8px">NÃO CONFORMIDADES</div>
+      ${ncs.map(it => `
+        <div style="background:var(--alert-bg);border:1px solid rgba(232,52,28,.2);border-radius:var(--r);padding:10px;margin-bottom:6px">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--alert);margin-bottom:3px">${it.item} · ${it.enquadramento} · Prazo: ${it.prazo}</div>
+          <div style="font-size:13px;font-weight:500">${it.descricao}</div>
+          ${S.obs[key(inst.id, it.codigo)] ? `<div style="font-size:12px;color:var(--steel);margin-top:4px;font-style:italic">"${S.obs[key(inst.id, it.codigo)]}"</div>` : ''}
+        </div>
+      `).join('')}
+    ` : '<div style="background:var(--signal-bg);border:1px solid rgba(0,200,150,.3);border-radius:var(--r);padding:12px;font-size:13px;color:var(--signal);font-weight:600">✓ Nenhuma não conformidade registrada!</div>'}
+  `;
+  document.getElementById('modal-ov').classList.add('open');
+}
+
+function abrirResumoGeral() {
+  const mun = S.municipio;
+  let sim=0, nao=0, na=0, nv=0, totalIt=0;
+  mun.instalacoes.forEach(inst => {
+    const itens = (CHECKLIST_DATA[inst.tipo] || {}).itens || [];
+    totalIt += itens.length;
+    itens.forEach(it => {
+      const r = S.respostas[key(inst.id, it.codigo)];
+      if (r === 'sim') sim++;
+      else if (r === 'nao') nao++;
+      else if (r === 'na') na++;
+      else if (r === 'nv') nv++;
+    });
+  });
+  const pend  = totalIt - sim - nao - na - nv;
+  const aplic = totalIt - na;
+  const pct   = aplic > 0 ? Math.round(sim / aplic * 100) : 0;
+
+  document.getElementById('modal-title').textContent = `Resumo — ${mun.nome}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--steel);margin-bottom:12px">
+      ${mun.instalacoes.length} instalações · ${totalIt} itens · ${mun.prestador}
+    </div>
+    <div class="res-grid">
+      <div class="res-box"><div class="res-val rv-s">${sim}</div><div class="res-key">Conforme</div></div>
+      <div class="res-box"><div class="res-val rv-n">${nao}</div><div class="res-key">Não conforme</div></div>
+      <div class="res-box"><div class="res-val rv-a">${na}</div><div class="res-key">Não aplica</div></div>
+      <div class="res-box"><div class="res-val rv-v">${nv}</div><div class="res-key">Não verif.</div></div>
+    </div>
+    <div style="text-align:center;padding:14px;background:var(--fog);border-radius:var(--r);margin-bottom:12px">
+      <div style="font-family:var(--font-mono);font-size:40px;font-weight:700;color:${corConf(pct)}">${pct}%</div>
+      <div style="font-size:12px;color:var(--steel)">Índice Geral de Conformidade</div>
+    </div>
+    ${pend > 0
+      ? `<div style="background:var(--warn-bg);border:1px solid rgba(245,166,35,.3);border-radius:var(--r);padding:10px;font-size:13px;color:var(--warn)">⚠️ ${pend} item(s) ainda sem resposta</div>`
+      : `<div style="background:var(--signal-bg);border:1px solid rgba(0,200,150,.3);border-radius:var(--r);padding:10px;font-size:13px;color:var(--signal);font-weight:600">✓ Todos os itens respondidos! Pronto para exportar.</div>`
+    }
+  `;
+  document.getElementById('modal-ov').classList.add('open');
+}
+
+function fecharModal(e) {
+  if (e.target === document.getElementById('modal-ov')) fecharModalBtn();
+}
+function fecharModalBtn() {
+  document.getElementById('modal-ov').classList.remove('open');
+}
+
+// ================================================================
+// EXPORTAR JSON (para sincronizar com o servidor depois)
+// ================================================================
+function exportarDados() {
+  const mun = S.municipio;
+  const payload = {
+    versao: '1.1',
+    exportado_em: new Date().toISOString(),
+    fiscal: S.fiscal,
+    data_fiscalizacao: S.data,
+    numero_os: S.os,
+    observacoes_iniciais: S.obsInic,
+    municipio: mun.nome,
+    prestador: mun.prestador,
+    instalacoes: mun.instalacoes.map(inst => {
+      const itens = (CHECKLIST_DATA[inst.tipo] || {}).itens || [];
+      const resps = itens
+        .filter(it => S.respostas[key(inst.id, it.codigo)] !== undefined)
+        .map(it => ({
+          codigo:        it.codigo,
+          item:          it.item,
+          descricao:     it.descricao,
+          enquadramento: it.enquadramento,
+          prazo:         it.prazo,
+          resposta:      S.respostas[key(inst.id, it.codigo)],
+          observacao:    S.obs[key(inst.id, it.codigo)] || null,
+        }));
+
+      const sim   = resps.filter(r => r.resposta === 'sim').length;
+      const nao   = resps.filter(r => r.resposta === 'nao').length;
+      const aplic = resps.filter(r => r.resposta !== 'na').length;
+
+      // Coleta fotos por código de item
+      const fotos = {};
+      if (S.fotos) {
+        Object.entries(S.fotos).forEach(([k, arr]) => {
+          if (!k.startsWith(inst.id + '::')) return;
+          const cod = k.split('::')[1];
+          if (arr && arr.length > 0) {
+            fotos[cod] = arr.map(f => ({
+              b64:   f.b64   || f.base64 || '',
+              thumb: f.thumb || '',
+              tipo:  f.tipo  || 'image/jpeg',
+            }));
+          }
+        });
+      }
+
+      return {
+        id:          inst.id,
+        nome:        inst.nome,
+        tipo:        inst.tipo,
+        nova:        inst.nova || false,       // instalação nova cadastrada em campo
+        latitude:    inst.lat,
+        longitude:   inst.lon,
+        // GPS capturado em campo (diferente das coordenadas cadastradas)
+        lat_capturada:      S.gps[inst.id]?.lat || null,
+        lon_capturada:      S.gps[inst.id]?.lon || null,
+        timestamp_captura:  S.gps[inst.id]?.ts  || null,
+        total_itens: itens.length,
+        respondidos: resps.length,
+        percentual_conformidade: aplic > 0 ? Math.round(sim / aplic * 100) : null,
+        nao_conformidades: nao,
+        respostas:   resps,
+        fotos:       fotos,
+      };
+    }).filter(i => i.respondidos > 0),
+  };
+
+  // Avisa sobre tamanho se houver muitas fotos
+  const jsonStr = JSON.stringify(payload, null, 2);
+  const tamanhoMB = (jsonStr.length / 1024 / 1024).toFixed(1);
+  if (parseFloat(tamanhoMB) > 10) {
+    toast(`⚠️ Arquivo grande (${tamanhoMB}MB) — pode demorar para exportar.`, 3000);
+  }
+
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const nome = `FISC_${mun.nome.replace(/\s+/g,'_')}_${S.data || 'sem-data'}.json`;
+  a.href = url; a.download = nome; a.click();
+  URL.revokeObjectURL(url);
+  toast(`✓ Arquivo ${nome} exportado! (${tamanhoMB}MB)`, 3000);
+}
+
+// ================================================================
+// INICIALIZAÇÃO
+// ================================================================
+atualizarConn();
+initIdent();
+
+// Se já havia sessão ativa com município, vai direto para a lista
+if (S.municipal && S.municipio && S.fiscal) {
+  renderizarLista();
+  mostrarTela('scr-lista');
+}
+</script>
+</body>
+</html>
