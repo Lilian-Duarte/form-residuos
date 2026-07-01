@@ -842,11 +842,6 @@ try {
   }
 } catch(e) {}
 
-// Limiar de aviso preventivo de memória (em MB). O limite real do localStorage
-// no Chrome Android costuma ficar entre 5 e 10MB — avisamos bem antes disso.
-const LIMIAR_AVISO_MEMORIA_MB = 3.5;
-let _avisoMemoriaMostrado = false;
-
 function salvar() {
   let jsonStr;
   try {
@@ -854,70 +849,6 @@ function salvar() {
   } catch (e) {
     return; // estado inconsistente — nada a fazer aqui
   }
-
-  const tamanhoMB = jsonStr.length / 1024 / 1024;
-
-  try {
-    localStorage.setItem('arisb_offline_session', jsonStr);
-    atualizarAvisoMemoria(tamanhoMB, false);
-  } catch (e) {
-    // Quota do localStorage excedida — os dados deste salvamento NÃO foram
-    // persistidos. Avisa de forma persistente, sem deixar isso passar em silêncio.
-    atualizarAvisoMemoria(tamanhoMB, true);
-  }
-}
-
-function atualizarAvisoMemoria(tamanhoMB, falhouAoSalvar) {
-  let banner = document.getElementById('aviso-memoria');
-
-  if (falhouAoSalvar) {
-    if (!banner) banner = criarBannerMemoria();
-    banner.innerHTML = `⚠️ <b>Não foi possível salvar — memória do dispositivo cheia (${tamanhoMB.toFixed(1)}MB).</b>
-      Exporte o JSON agora para não perder os dados, e evite tirar mais fotos nesta sessão.`;
-    banner.style.display = 'flex';
-    banner.style.background = 'rgba(220,38,38,.12)';
-    banner.style.borderColor = 'rgba(220,38,38,.35)';
-    banner.style.color = '#7f1d1d';
-    _avisoMemoriaMostrado = true;
-    return;
-  }
-
-  if (tamanhoMB >= LIMIAR_AVISO_MEMORIA_MB) {
-    if (!banner) banner = criarBannerMemoria();
-    banner.innerHTML = `⚠️ <b>Memória quase cheia (${tamanhoMB.toFixed(1)}MB).</b>
-      Considere exportar o JSON em breve para garantir que nada se perca.`;
-    banner.style.display = 'flex';
-    banner.style.background = 'rgba(217,119,6,.12)';
-    banner.style.borderColor = 'rgba(217,119,6,.35)';
-    banner.style.color = '#78350f';
-    _avisoMemoriaMostrado = true;
-  } else if (banner && tamanhoMB < LIMIAR_AVISO_MEMORIA_MB * 0.8) {
-    // Volta a ficar bem abaixo do limiar (ex.: após remover fotos) — esconde o aviso.
-    banner.style.display = 'none';
-    _avisoMemoriaMostrado = false;
-  }
-}
-
-function criarBannerMemoria() {
-  const banner = document.createElement('div');
-  banner.id = 'aviso-memoria';
-  banner.style.position = 'fixed';
-  banner.style.top = '0';
-  banner.style.left = '0';
-  banner.style.right = '0';
-  banner.style.zIndex = '300';
-  banner.style.padding = '10px 14px';
-  banner.style.fontSize = '12.5px';
-  banner.style.lineHeight = '1.4';
-  banner.style.border = '1px solid';
-  banner.style.borderRadius = '0';
-  banner.style.display = 'none';
-  banner.style.alignItems = 'center';
-  banner.style.justifyContent = 'center';
-  banner.style.textAlign = 'center';
-  banner.style.gap = '8px';
-  document.body.appendChild(banner);
-  return banner;
 }
 
 // ================================================================
@@ -2165,6 +2096,20 @@ function continuarDeJson(input) {
           lon: instJson.lon_capturada,
           ts:  instJson.timestamp_captura || null,
         };
+      }
+      
+      if (instId.includes("NOVA")){
+         const novaInst = {
+          id: instJson.id,
+          nome: instJson.nome,
+          tipo: instJson.tipo,
+          nova: true,      // marcador para identificar no import
+          lat:  instJson.lat_capturada,
+          lon:  instJson.lon_capturada,
+          ts:   instJson.timestamp_captura,
+        };
+        S.municipio.instalacoes.push(novaInst);
+        salvar();
       }
 
       (instJson.respostas || []).forEach(r => {
